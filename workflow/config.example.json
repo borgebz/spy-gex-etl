@@ -1,0 +1,6 @@
+{
+  "CBOE_SPY_OPTIONS_QUOTES_URL": "https://cdn-api.cboe.com/api/global/delayed_quotes/options/SPY.json",
+  "SQLITE_PATH": "/Users/joaoborges/Documents/GitHub/spy-gex-etl/workflow/data/spy_gex.db",
+  "FMP_API_URL": "https://financialmodelingprep.com/stable/quote?symbol=SPY",
+  "FMP_API_Authorization_Header": "Bearer xxx"
+}

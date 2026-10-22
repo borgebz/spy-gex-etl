@@ -1,0 +1,15 @@
+# KNIME workspace internals (logs, browser cache, UI state)
+workflow/.metadata/
+
+# KNIME runtime / execution data inside workflows
+**/.knimeLock   
+**/port_*/
+**/internal/
+**/internalTables/
+**/filestore/
+
+# Local config with secrets / machine paths
+workflow/config.json
+
+.DS_Store
+
