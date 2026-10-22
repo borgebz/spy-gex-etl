@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://www.knime.org/2008/09/XMLConfig" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.knime.org/2008/09/XMLConfig http://www.knime.org/XMLConfig_2008_09.xsd" key="settings.xml">
+    <entry key="node_file" type="xstring" value="settings.xml"/>
+    <config key="flow_stack"/>
+    <config key="internal_node_subsettings">
+        <entry key="memory_policy" type="xstring" value="CacheSmallInMemory"/>
+    </config>
+    <config key="model">
+        <config key="tableSelection">
+            <entry key="catalogName" type="xstring" value=""/>
+            <entry key="schemaName" type="xstring" value=""/>
+            <entry key="tableName" type="xstring" value="price_tick"/>
+        </config>
+        <entry key="actionOnDBError" type="xstring" value="FAIL"/>
+        <entry key="batchSize" type="xint" value="1000"/>
+        <entry key="allowSetColumns" type="xboolean" value="true"/>
+        <entry key="allowWhereColumns" type="xboolean" value="false"/>
+        <config key="whereDataColumns">
+            <entry key="mode" type="xstring" value="MANUAL"/>
+            <config key="patternFilter">
+                <entry key="pattern" type="xstring" value=""/>
+                <entry key="isCaseSensitive" type="xboolean" value="false"/>
+                <entry key="isInverted" type="xboolean" value="false"/>
+            </config>
+            <config key="manualFilter">
+                <config key="manuallySelected">
+                    <entry key="array-size" type="xint" value="0"/>
+                </config>
+                <config key="manuallyDeselected">
+                    <entry key="array-size" type="xint" value="0"/>
+                </config>
+                <entry key="includeUnknownColumns" type="xboolean" value="false"/>
+            </config>
+            <config key="typeFilter">
+                <config key="selectedTypes">
+                    <entry key="array-size" type="xint" value="0"/>
+                </config>
+            </config>
+        </config>
+        <config key="setDataColumns">
+            <entry key="mode" type="xstring" value="MANUAL"/>
+            <config key="patternFilter">
+                <entry key="pattern" type="xstring" value=""/>
+                <entry key="isCaseSensitive" type="xboolean" value="false"/>
+                <entry key="isInverted" type="xboolean" value="false"/>
+            </config>
+            <config key="manualFilter">
+                <config key="manuallySelected">
+                    <entry key="array-size" type="xint" value="3"/>
+                    <entry key="0" type="xstring" value="price"/>
+                    <entry key="1" type="xstring" value="market_ts_utc"/>
+                    <entry key="2" type="xstring" value="volume"/>
+                </config>
+                <config key="manuallyDeselected">
+                    <entry key="array-size" type="xint" value="3"/>
+                    <entry key="0" type="xstring" value="Content type"/>
+                    <entry key="1" type="xstring" value="Status"/>
+                    <entry key="2" type="xstring" value="body"/>
+                </config>
+                <entry key="includeUnknownColumns" type="xboolean" value="true"/>
+            </config>
+            <config key="typeFilter">
+                <config key="selectedTypes">
+                    <entry key="array-size" type="xint" value="0"/>
+                </config>
+            </config>
+        </config>
+        <entry key="appendStatus" type="xboolean" value="true"/>
+        <entry key="statusColumn" type="xstring" value="Insert Status"/>
+        <entry key="appendError" type="xboolean" value="true"/>
+        <entry key="errorColumn" type="xstring" value="Insert Error"/>
+        <entry key="disablePort" type="xboolean" value="false"/>
+        <config key="outputMapping">
+            <config key="byNameSettings">
+                <config key="0">
+                    <entry key="filterType" type="xstring" value="MANUAL"/>
+                    <entry key="fromColName" type="xstring" value="body"/>
+                    <config key="fromColType">
+                        <entry key="cell_class" type="xstring" value="org.knime.core.data.json.JSONCell"/>
+                        <entry key="is_null" type="xboolean" value="false"/>
+                    </config>
+                    <entry key="consumption_path_converter" type="xstring" value="org.knime.core.data.convert.java.SimpleDataCellToJavaConverterFactory(DataValue,class java.lang.String,String (toString()))"/>
+                    <entry key="consumption_path_consumer" type="xstring" value="java.lang.String-&gt;VARCHAR"/>
+                </config>
+            </config>
+            <config key="byTypeSettings"/>
+        </config>
+    </config>
+    <config key="variables"/>
+    <entry key="customDescription" type="xstring" isnull="true" value=""/>
+    <entry key="state" type="xstring" value="IDLE"/>
+    <entry key="factory" type="xstring" value="org.knime.database.node.io.insert2.DBInsert2NodeFactory"/>
+    <entry key="node-name" type="xstring" value="DB Row Inserter"/>
+    <entry key="node-bundle-name" type="xstring" value="KNIME database nodes"/>
+    <entry key="node-bundle-symbolic-name" type="xstring" value="org.knime.database.nodes"/>
+    <entry key="node-bundle-vendor" type="xstring" value="KNIME AG, Zurich, Switzerland"/>
+    <entry key="node-bundle-version" type="xstring" value="5.12.0.v202606171318"/>
+    <entry key="node-feature-name" type="xstring" value="KNIME Database"/>
+    <entry key="node-feature-symbolic-name" type="xstring" value="org.knime.features.database.feature.group"/>
+    <entry key="node-feature-vendor" type="xstring" value="KNIME AG, Zurich, Switzerland"/>
+    <entry key="node-feature-version" type="xstring" value="5.12.0.v202606171318"/>
+    <config key="factory_settings"/>
+    <entry key="name" type="xstring" value="DB Row Inserter"/>
+    <entry key="hasContent" type="xboolean" value="false"/>
+    <entry key="isInactive" type="xboolean" value="false"/>
+    <config key="ports">
+        <config key="port_1">
+            <entry key="index" type="xint" value="1"/>
+            <entry key="port_dir_location" type="xstring" isnull="true" value=""/>
+        </config>
+        <config key="port_2">
+            <entry key="index" type="xint" value="2"/>
+            <entry key="port_dir_location" type="xstring" isnull="true" value=""/>
+        </config>
+    </config>
+    <config key="filestores">
+        <entry key="file_store_location" type="xstring" isnull="true" value=""/>
+        <entry key="file_store_id" type="xstring" isnull="true" value=""/>
+    </config>
+</config>
