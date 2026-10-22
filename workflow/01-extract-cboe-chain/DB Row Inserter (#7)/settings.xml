@@ -11,7 +11,7 @@
             <entry key="schemaName" type="xstring" value=""/>
             <entry key="tableName" type="xstring" value="raw_cboe_options_quotes"/>
         </config>
-        <entry key="actionOnDBError" type="xstring" value="FAIL"/>
+        <entry key="actionOnDBError" type="xstring" value="IGNORE"/>
         <entry key="batchSize" type="xint" value="1000"/>
         <entry key="allowSetColumns" type="xboolean" value="true"/>
         <entry key="allowWhereColumns" type="xboolean" value="false"/>
@@ -46,16 +46,18 @@
             </config>
             <config key="manualFilter">
                 <config key="manuallySelected">
-                    <entry key="array-size" type="xint" value="3"/>
+                    <entry key="array-size" type="xint" value="5"/>
                     <entry key="0" type="xstring" value="status_code"/>
                     <entry key="1" type="xstring" value="body"/>
-                    <entry key="2" type="xstring" value="source_url"/>
+                    <entry key="2" type="xstring" value="snapshot_ts_utc"/>
+                    <entry key="3" type="xstring" value="market_ts_utc"/>
+                    <entry key="4" type="xstring" value="source_url"/>
                 </config>
                 <config key="manuallyDeselected">
                     <entry key="array-size" type="xint" value="1"/>
                     <entry key="0" type="xstring" value="Content type"/>
                 </config>
-                <entry key="includeUnknownColumns" type="xboolean" value="true"/>
+                <entry key="includeUnknownColumns" type="xboolean" value="false"/>
             </config>
             <config key="typeFilter">
                 <config key="selectedTypes">
@@ -63,9 +65,9 @@
                 </config>
             </config>
         </config>
-        <entry key="appendStatus" type="xboolean" value="true"/>
+        <entry key="appendStatus" type="xboolean" value="false"/>
         <entry key="statusColumn" type="xstring" value="Insert Status"/>
-        <entry key="appendError" type="xboolean" value="true"/>
+        <entry key="appendError" type="xboolean" value="false"/>
         <entry key="errorColumn" type="xstring" value="Insert Error"/>
         <entry key="disablePort" type="xboolean" value="false"/>
         <config key="outputMapping">

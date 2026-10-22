@@ -6,7 +6,7 @@
         <entry key="memory_policy" type="xstring" value="CacheSmallInMemory"/>
     </config>
     <config key="model">
-        <entry key="statement" type="xstring" value="CREATE TABLE IF NOT EXISTS raw_cboe_options_quotes (%%00010    id          INTEGER PRIMARY KEY AUTOINCREMENT,%%00010    fetched_at  TEXT    NOT NULL DEFAULT (datetime('now')),%%00010    source_url  TEXT    NOT NULL,%%00010    status_code INTEGER,%%00010    body        TEXT    NOT NULL%%00010);"/>
+        <entry key="statement" type="xstring" value="CREATE TABLE IF NOT EXISTS raw_cboe_options_quotes (%%00010    id              INTEGER PRIMARY KEY AUTOINCREMENT,%%00010    snapshot_ts_utc TEXT    NOT NULL UNIQUE,   -- CBOE file build time%%00010    market_ts_utc   TEXT    NOT NULL,          -- data.last_trade_time, ET → UTC%%00010    fetched_at      TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),%%00010    source_url      TEXT    NOT NULL,%%00010    status_code     INTEGER,%%00010    body            TEXT    NOT NULL%%00010);"/>
         <entry key="multipleStatement" type="xboolean" value="false"/>
         <entry key="statementSeparator" type="xstring" value=";"/>
     </config>
