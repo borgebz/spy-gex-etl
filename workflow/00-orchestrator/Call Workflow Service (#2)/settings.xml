@@ -68,7 +68,7 @@
     </config>
     <config key="variables"/>
     <entry key="customDescription" type="xstring" isnull="true" value=""/>
-    <entry key="state" type="xstring" value="EXECUTED"/>
+    <entry key="state" type="xstring" value="IDLE"/>
     <entry key="factory" type="xstring" value="org.knime.workflowservices.knime.caller2.CallWorkflow2NodeFactory"/>
     <entry key="node-name" type="xstring" value="Call Workflow Service"/>
     <entry key="node-bundle-name" type="xstring" value="KNIME Nodes to build and use KNIME workflow services"/>
@@ -86,7 +86,7 @@
         <config key="Outputs"/>
     </config>
     <entry key="name" type="xstring" value="Call Workflow Service"/>
-    <entry key="hasContent" type="xboolean" value="true"/>
+    <entry key="hasContent" type="xboolean" value="false"/>
     <entry key="isInactive" type="xboolean" value="false"/>
     <config key="ports"/>
     <config key="internalObjects">
@@ -95,6 +95,6 @@
     </config>
     <config key="filestores">
         <entry key="file_store_location" type="xstring" isnull="true" value=""/>
-        <entry key="file_store_id" type="xstring" value="7e21caa4-9870-4045-ada5-5646d4e2b4e0"/>
+        <entry key="file_store_id" type="xstring" isnull="true" value=""/>
     </config>
 </config>
