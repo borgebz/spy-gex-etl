@@ -1,69 +1,52 @@
-using System.Diagnostics;
-using GexScheduler.Common.Models;
 using GexScheduler.Options;
 using Microsoft.Extensions.Options;
 
-
 namespace GexScheduler.Runners;
 
-public class KnimeRunner(IOptions<SchedulerOptions> options)
+/// <summary>Runs one KNIME workflow headless with NodePit Batch.</summary>
+public sealed class KnimeRunner(ProcessRunner process, IOptions<SchedulerOptions> options)
 {
-    private readonly IOptions<SchedulerOptions> _opt = options;
+    private readonly SchedulerOptions _opt = options.Value;
 
     public async Task<RunResult> RunAsync(string workflow, CancellationToken ct)
     {
-        var dataDir = Path.Combine(_opt.Value.BatchDataDir!, workflow);
-        Directory.CreateDirectory(dataDir);
-
-        var psi = new ProcessStartInfo(_opt.Value.KnimeExe!)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-
-        var args = new[] { 
+        // Own workspace per workflow: two KNIME runs on one workspace fail with "workspace in use".
+        var dataDir = Path.Combine(_opt.BatchDataDir, workflow);
+        string[] args =
+        [
             "-nosplash",
             "-consoleLog",
-            "-data",
-            dataDir,
-            "-application",
-            "com.nodepit.batch.application.NodePitBatchExecutor",
+            "-data", dataDir,
+            "-application", "com.nodepit.batch.application.NodePitBatchExecutor",
             "--launcher.suppressErrors",
             "-r",
             "--no-save",
-            Path.Combine(_opt.Value.WorkflowRoot!, workflow)};
+            Path.Combine(_opt.WorkflowRoot, workflow)
+        ];
 
-        foreach (var a in args)
-            psi.ArgumentList.Add(a);
+        if (_opt.DryRun)
+            return new RunResult(RunOutcome.DryRun, null, TimeSpan.Zero, $"would run {workflow}", null);
 
-        var sw = Stopwatch.StartNew();
-        using var p = Process.Start(psi)!;
-        var output = p.StandardOutput.ReadToEndAsync(ct);
-        var errors = p.StandardError.ReadToEndAsync(ct);
-
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(_opt.Value.JobTimeout!);
-
-        try
-        { 
-            await p.WaitForExitAsync(timeout.Token); 
-        }
-        catch (OperationCanceledException)
-        {
-            p.Kill(entireProcessTree: true);
-            
-            return new RunResult(
-                -1,
-                sw.Elapsed,
-                "timeout"); 
-        }
-
-        var log = await output + await errors;
-
-        return new RunResult(
-            p.ExitCode,
-            sw.Elapsed,
-            string.Join('\n', log.Split('\n').Where(l => l.Contains("ERROR")).TakeLast(5)));
+        Directory.CreateDirectory(dataDir);
+        var r = await process.RunAsync(workflow, _opt.KnimeExe, args, null, ct);
+        return new RunResult(ToOutcome(r.ExitCode), r.ExitCode, r.Took, ErrorSummary(r.Output), r.LogFile);
     }
+
+    private static RunOutcome ToOutcome(int? exitCode) => exitCode switch
+    {
+        null => RunOutcome.Timeout,
+        0 => RunOutcome.Ok,
+        10 => RunOutcome.BadInput,
+        20 => RunOutcome.Locked,
+        30 => RunOutcome.Failed,
+        40 => RunOutcome.SaveError,
+        50 => RunOutcome.Unknown,
+        _ => RunOutcome.Failed
+    };
+
+    private static string ErrorSummary(string output) =>
+        string.Join(" | ", output.Split('\n')
+            .Where(l => l.Contains("ERROR"))
+            .Select(l => l.Trim())
+            .TakeLast(3));
 }

@@ -1,3 +1,3 @@
-namespace GexScheduler.Common.Models;
+namespace GexScheduler.Runners;
 
-public sealed record RunResult(int ExitCode, TimeSpan Took, string LogTail);
+public sealed record RunResult(RunOutcome Outcome, int? ExitCode, TimeSpan Took, string Summary, string? LogFile);

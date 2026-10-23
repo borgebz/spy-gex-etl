@@ -19,4 +19,8 @@ workflow/data/*.db-shm
 # Option snapshot archive (written by scripts/archive_db.py, ~13 MB per day)
 workflow/data/archive/
 
+# .NET build output
+scheduler/bin/
+scheduler/obj/
+
 .DS_Store

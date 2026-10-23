@@ -1,41 +1,20 @@
-using GexScheduler.Common.Helpers;
-using GexScheduler.Common.Models;
+using GexScheduler.Options;
 using GexScheduler.Runners;
+using GexScheduler.Scheduling;
 using Microsoft.Extensions.Options;
 
 namespace GexScheduler.Jobs;
 
+/// <summary>01 → 03 → 04 → 05: CBOE chain, parse, GEX, web export.</summary>
 public sealed class PipelineJob(
     KnimeRunner knime,
-    MarketClock clock,
+    MarketCalendar calendar,
     JobGate gate,
-    IOptions<SchedulerOptions> opt,
-    ILogger<PipelineJob> log) : BackgroundService
+    TimeProvider time,
+    IOptions<SchedulerOptions> options,
+    ILogger<PipelineJob> log) : KnimeJob(knime, calendar, gate, time, log)
 {
-    protected override async Task ExecuteAsync(CancellationToken ct)
-    {
-        using var timer = new PeriodicTimer(opt.Value.PipelineEvery!);
+    protected override string Workflow => "00-orchestrator";
 
-        do
-        {
-            if (!clock.IsMarketWindow()) continue;
-
-            if (!gate.TryEnterShared())
-            {
-                log.LogInformation("pipeline skipped: busy or archive running"); continue; 
-            }
-
-            try
-            {
-                var r = await knime.RunAsync("00-orchestrator", ct);
-
-                log.Log(r.ExitCode == 0 ? LogLevel.Information : LogLevel.Warning,
-                        "pipeline exit={Exit} took={Took:mm\\:ss} {Tail}", r.ExitCode, r.Took, r.LogTail);
-            }
-            finally
-            {
-                gate.ExitShared(); 
-            }
-        } while (await timer.WaitForNextTickAsync(ct));
-    }
+    protected override TimeSpan Period => options.Value.PipelineEvery;
 }

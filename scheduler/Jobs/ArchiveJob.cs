@@ -1,38 +1,40 @@
 using GexScheduler.Runners;
-using Microsoft.Extensions.Options;
+using GexScheduler.Scheduling;
 
 namespace GexScheduler.Jobs;
 
+/// <summary>Once per trading day after the close: archive_db.py --vacuum, with the database to itself.</summary>
 public sealed class ArchiveJob(
-    MarketClock clock,
+    PythonRunner python,
+    MarketCalendar calendar,
     JobGate gate,
-    IOptions<SchedulerOptions> opt,
+    TimeProvider time,
     ILogger<ArchiveJob> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        using var timer = new PeriodicTimer(opt.Value.ArchiveAtEt!);
-
-        do
+        while (!ct.IsCancellationRequested)
         {
-            if (!clock.IsMarketWindow()) continue;
-
-            if (!gate.TryEnterShared())
-            {
-                log.LogInformation("pipeline skipped: busy or archive running"); continue; 
-            }
-
+            var next = calendar.NextArchiveRun(time.GetUtcNow());
+            log.LogInformation("archive next run {NextUtc:yyyy-MM-dd HH:mm}Z ({NextEt:ddd HH:mm} ET)",
+                next, MarketCalendar.ToEastern(next));
             try
             {
-                var r = await knime.RunAsync("00-orchestrator", ct);
-
-                log.Log(r.ExitCode == 0 ? LogLevel.Information : LogLevel.Warning,
-                        "pipeline exit={Exit} took={Took:mm\\:ss} {Tail}", r.ExitCode, r.Took, r.LogTail);
+                await Task.Delay(next - time.GetUtcNow(), time, ct);
+                using (await gate.EnterExclusiveAsync(ct))
+                {
+                    var r = await python.RunArchiveAsync(ct);
+                    log.LogRun("archive", r);
+                }
             }
-            finally
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                gate.ExitShared(); 
+                break;
             }
-        } while (await timer.WaitForNextTickAsync(ct));
+            catch (Exception ex)
+            {
+                log.LogError(ex, "archive failed");
+            }
+        }
     }
 }

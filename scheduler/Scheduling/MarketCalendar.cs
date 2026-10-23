@@ -5,57 +5,40 @@ namespace GexScheduler.Scheduling;
 
 public sealed class MarketCalendar(IOptions<SchedulerOptions> options)
 {
-    private readonly IOptions<SchedulerOptions> _options = options;
+    // IANA name, never a fixed offset: the US and Portugal change clocks on different dates.
+    public static readonly TimeZoneInfo Eastern = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 
-    private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+    private readonly SchedulerOptions _opt = options.Value;
+
+    public static DateTime ToEastern(DateTimeOffset utc) => TimeZoneInfo.ConvertTime(utc, Eastern).DateTime;
+
+    public bool IsTradingDay(DateOnly day) =>
+        day.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)
+        && !_opt.Holidays.Contains(day);
 
     public bool IsInWindow(DateTimeOffset utc)
     {
-        DateTimeOffset etTime = TimeZoneInfo.ConvertTime(utc, EasternTimeZone);
-
-        if (etTime.DayOfWeek == DayOfWeek.Saturday || etTime.DayOfWeek == DayOfWeek.Sunday)
-        {
-            return false;
-        }
-
-        if (IsHoliday(etTime.Date))
-        {
-            return false;
-        }
-
-        TimeOnly timeOfDay = etTime.TimeOfDay;
-        return timeOfDay >= _options.Value.MarketOpenEt && timeOfDay < _options.Value.MarketCloseEt!;
+        var et = ToEastern(utc);
+        var time = TimeOnly.FromDateTime(et);
+        return IsTradingDay(DateOnly.FromDateTime(et))
+               && time >= _opt.MarketOpenEt
+               && time < _opt.MarketCloseEt;
     }
 
     public DateTimeOffset NextArchiveRun(DateTimeOffset utc)
     {
-        DateTimeOffset etNow = TimeZoneInfo.ConvertTime(utc, EasternTimeZone);
-
-        DateTimeOffset etCandidate = new DateTimeOffset(etNow.Date, EasternTimeZone.GetUtcOffset(etNow.Date))
-            .Add(_options.Value.ArchiveAtEt);
-
-        etCandidate = TimeZoneInfo.ConvertTime(etCandidate.UtcDateTime, EasternTimeZone);
-
-        if (etNow >= etCandidate)
+        var day = DateOnly.FromDateTime(ToEastern(utc));
+        while (true)
         {
-            etCandidate = etCandidate.AddDays(1);
+            if (IsTradingDay(day))
+            {
+                // Build the run time from the ET date + time, so each day gets its own UTC offset.
+                var local = day.ToDateTime(_opt.ArchiveAtEt, DateTimeKind.Unspecified);
+                var runAt = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(local, Eastern));
+                if (runAt > utc)
+                    return runAt;
+            }
+            day = day.AddDays(1);
         }
-
-        while (etCandidate.DayOfWeek == DayOfWeek.Saturday || 
-               etCandidate.DayOfWeek == DayOfWeek.Sunday || 
-               IsHoliday(etCandidate.Date))
-        {
-            etCandidate = etCandidate.AddDays(1);
-        }
-
-        return etCandidate.ToUniversalTime();
-    }
-
-    private bool IsHoliday(DateTime date)
-    {
-        if (date.Month == 1 && date.Day == 1) return true;
-        if (date.Month == 12 && date.Day == 25) return true;
-
-        return false;
     }
 }
