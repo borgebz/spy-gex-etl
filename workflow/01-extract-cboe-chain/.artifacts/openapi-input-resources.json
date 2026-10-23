@@ -1,0 +1,16 @@
+{
+    "schema": {
+        "type": "object",
+        "properties": {
+            "input-parameter": {
+                "type": "string",
+                "format": "binary"
+            }
+        }
+    },
+    "encoding": {
+        "input-parameter": {
+            "contentType": "knime-port/org.knime.core.node.BufferedDataTable"
+        }
+    }
+}
