@@ -1,6 +1,10 @@
 /* Base */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: calc(var(--topbar-h) + 16px); -webkit-text-size-adjust: 100%; }
+/* Safety net only (nothing should overflow sideways). On body it passes to the viewport, so position: sticky
+   keeps working and fixed elements are never clipped. Do not clip .story or .hero: some browsers then clip
+   the fixed full-screen monitor to that column (seen in Safari). */
+body { overflow-x: hidden; }
 body {
   margin: 0;
   background: var(--bg);
@@ -95,8 +99,6 @@ dl, dd { margin: 0; }
 .hero__caption { margin-top: 24px; font-size: 13px; color: var(--faint); }
 
 /* 02–06 Story */
-/* The monitor halo reaches past the column. overflow: clip (not hidden) keeps position: sticky working. */
-.hero, .story { overflow-x: clip; }
 .story {
   max-width: 1360px; margin: 0 auto; padding: 0 var(--gutter);
   display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(32px, 5vw, 80px);

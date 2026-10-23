@@ -31,6 +31,12 @@ GA.fmt = (function () {
     price(v) { return Number(v).toFixed(2); },
     strike(v) { return Number.isInteger(+v) ? String(+v) : (+v).toFixed(1); },
     int(v) { return Number(v).toLocaleString("en-US"); },
+    /** Bytes → "70.5 MB" (decimal units, like Finder) */
+    bytes(v) {
+      const u = ["B", "KB", "MB", "GB"]; let i = 0, n = +v;
+      while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+      return (i === 0 ? n.toFixed(0) : n.toFixed(n < 100 ? 1 : 0)) + " " + u[i];
+    },
     /** ISO UTC → "Oct 22, 15:59 ET" */
     asOf(iso) { const d = new Date(iso); return `${etDay.format(d)}, ${etTime.format(d)} ET`; },
     /** "2026-10-23" → "Oct 23" (a calendar date, no time zone shift) */

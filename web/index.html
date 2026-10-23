@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
-  <link rel="stylesheet" href="css/tokens.css?v=7">
-  <link rel="stylesheet" href="css/main.css?v=7">
-  <link rel="stylesheet" href="css/terminal.css?v=7">
+  <link rel="stylesheet" href="css/tokens.css?v=21">
+  <link rel="stylesheet" href="css/main.css?v=21">
+  <link rel="stylesheet" href="css/terminal.css?v=21">
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -181,7 +181,12 @@
                   <li><span class="flow__id num">04</span><span class="flow__name">Compute GEX</span><span class="flow__what">GEX snapshots</span><span class="flow__n num" data-bind="gex_snapshots">–</span></li>
                   <li><span class="flow__id num">05</span><span class="flow__name">Export</span><span class="flow__what">files for this page</span><span class="flow__n num">4</span></li>
                 </ol>
-                <p class="screen-foot">Orchestrated by <span class="amber">00-orchestrator</span>. Data exported <span class="num" data-bind="generated">–</span>.</p>
+                <div class="volume" data-volume hidden>
+                  <div class="volume__cell"><span class="volume__n num" data-bind="raw_size">–</span><span class="volume__l">Raw JSON pulled</span><i class="volume__bar" data-bar="raw"></i></div>
+                  <div class="volume__cell"><span class="volume__n num" data-bind="db_size">–</span><span class="volume__l">SQLite database</span><i class="volume__bar" data-bar="db"></i></div>
+                  <div class="volume__cell"><span class="volume__n num" data-bind="page_size">–</span><span class="volume__l">Sent to this page</span><i class="volume__bar" data-bar="page"></i></div>
+                </div>
+                <p class="screen-foot" data-bind="volume_ratio"></p>
               </section>
 
               <section class="screen screen--center" data-screen-id="formula" data-wt="Formula" aria-label="GEX formula">
@@ -290,9 +295,9 @@
   <script defer src="data/data.js"></script>
   <script defer src="vendor/echarts.min.js"></script><!-- Apache ECharts 5.5.1, Apache-2.0, vendored so the page works offline -->
 
-  <script defer src="js/format.js?v=7"></script>
-  <script defer src="js/charts.js?v=7"></script>
-  <script defer src="js/zoom.js?v=7"></script>
-  <script defer src="js/main.js?v=7"></script>
+  <script defer src="js/format.js?v=21"></script>
+  <script defer src="js/charts.js?v=21"></script>
+  <script defer src="js/zoom.js?v=21"></script>
+  <script defer src="js/main.js?v=21"></script>
 </body>
 </html>

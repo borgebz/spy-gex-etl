@@ -36,6 +36,19 @@
       gex_snapshots: f.int(D.pipeline.gex_snapshots),
       price_ticks: f.int(D.pipeline.price_ticks),
     };
+    // Data size funnel on the pipeline screen (pipeline.raw_bytes / db_bytes from 05-export).
+    const P = D.pipeline;
+    let volumeRatio = "";
+    if (P.raw_bytes && P.db_bytes) {
+      const pageBytes = new Blob([JSON.stringify(D)]).size;
+      Object.assign(values, { raw_size: f.bytes(P.raw_bytes), db_size: f.bytes(P.db_bytes), page_size: f.bytes(pageBytes) });
+      volumeRatio = `The page gets ${n(f.int(Math.round(P.raw_bytes / pageBytes)) + "×")} less data than the pipeline pulled.`;
+      const max = Math.max(P.raw_bytes, P.db_bytes);
+      const setBar = (k, b) => document.querySelector(`[data-bar="${k}"]`).style.setProperty("--w", (b / max) * 100 + "%");
+      setBar("raw", P.raw_bytes); setBar("db", P.db_bytes); setBar("page", pageBytes); // linear on purpose
+      document.querySelector("[data-volume]").hidden = false;
+    }
+
     if (ex) {
       Object.assign(values, {
         ex_label: `${f.day(ex.expiry)} ${f.strike(ex.strike)}`,
@@ -54,6 +67,7 @@
         (neg
           ? `Net gamma is negative, so dealers chase moves instead of damping them.`
           : `Net gamma is positive, so dealers lean against moves and damp them.`),
+      volume_ratio: volumeRatio,
     };
 
     document.querySelectorAll("[data-bind]").forEach((el) => {
@@ -148,11 +162,10 @@
     steps.get(current).classList.add("is-active");
 
     // Full screen (green traffic light). Inside it, arrow keys roll between screens.
-    const play = (id) => { const r = replay.get(id); if (r && r.opt && !calm) { r.chart.clear(); r.chart.setOption(r.opt); } };
-    GA.zoom.init(document.querySelector('[data-monitor="hero"]'), { onEnter: () => play("hero"), onExit: () => play("hero") });
+    // No bar replay on enter: the chart is already drawn at full size in the transition snapshot, and a
+    // replay would redraw the canvas every frame right when the monitor lands (profiled).
+    GA.zoom.init(document.querySelector('[data-monitor="hero"]'), {});
     GA.zoom.init(document.querySelector('[data-monitor="story"]'), {
-      onEnter: () => play(current),
-      onExit: () => play(current),
       // Leave the page where the screen now is, so the monitor lands next to the matching text.
       beforeExit: () => steps.get(current).scrollIntoView({ block: "center", behavior: "instant" }),
       onKey(e) {

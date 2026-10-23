@@ -3,10 +3,10 @@
 .monitor { position: relative; isolation: isolate; width: 100%; display: flex; flex-direction: column; align-items: center; }
 .monitor::before { /* warm light the screen throws on the wall behind it */
   content: ""; position: absolute; z-index: -1; pointer-events: none;
-  inset: -14% -18% -6%;
+  inset: -14% 0 -6%; /* vertical only: a sideways overhang would make the page scroll on phones */
   background:
-    radial-gradient(46% 42% at 50% 44%, rgba(255, 179, 71, 0.13), transparent 72%),
-    radial-gradient(70% 60% at 50% 50%, rgba(255, 255, 255, 0.025), transparent 75%);
+    radial-gradient(56% 42% at 50% 44%, rgba(255, 179, 71, 0.13), transparent 72%),
+    radial-gradient(80% 60% at 50% 50%, rgba(255, 255, 255, 0.025), transparent 75%);
 }
 .monitor--hero { max-width: 880px; margin-top: clamp(28px, 4.5vh, 44px); text-align: left; }
 .monitor--story { max-width: 740px; margin-left: auto; }
@@ -206,6 +206,7 @@
 @keyframes roll-out-back { to { transform: translateY(100%); } }
 
 .screen--center { display: flex; flex-direction: column; justify-content: center; padding-bottom: 24px; }
+.screen--center > * { flex-shrink: 0; } /* never squash a line to zero height when space is tight */
 .formula__example { margin-top: 22px; }
 .formula__example-head { font-size: 13px; color: var(--amber-dim); }
 .formula__example-line { margin-top: 4px; font-size: 15px; color: var(--amber); }
@@ -229,12 +230,25 @@
 .flow { list-style: none; margin: 4px 0 0; padding: 0; }
 .flow li {
   display: grid; grid-template-columns: 32px minmax(0, 1fr) auto auto; align-items: baseline; gap: 14px;
-  padding: 14px 0; border-bottom: 1px dashed var(--grid);
+  padding: 12px 0; border-bottom: 1px dashed var(--grid);
 }
 .flow__id { color: var(--amber-dim); font-weight: 400; font-size: 13px; }
 .flow__name { color: var(--amber); font-size: 15px; font-weight: 500; }
 .flow__what { color: var(--amber-dim); font-size: 13px; }
 .flow__n { color: var(--amber); font-size: 18px; min-width: 7ch; text-align: right; }
+
+/* Data size funnel under the pipeline list. Linear bars, with a minimum width so the tiny one still shows. */
+.volume { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
+.volume__cell { display: flex; flex-direction: column; gap: 2px; }
+.volume__n { font-size: 20px; color: var(--amber); }
+.volume__l { font-size: 12px; color: var(--amber-dim); }
+.volume__bar { display: block; height: 3px; margin-top: 8px; border-radius: 2px; background: var(--grid); overflow: hidden; }
+.volume__bar::after {
+  content: ""; display: block; height: 100%; width: var(--w, 0%); min-width: 3px;
+  background: var(--amber); transform-origin: left;
+}
+[data-screen-id="pipeline"].is-entering .volume__bar::after { animation: bar-grow 600ms 120ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes bar-grow { from { transform: scaleX(0); } }
 
 /* Formula screen */
 .formula { padding-top: 8px; }
@@ -260,6 +274,16 @@
 .dot--amber { background: var(--amber); box-shadow: 0 0 10px rgba(255, 179, 71, 0.5); }
 .dot--put { background: var(--put); box-shadow: 0 0 10px rgba(242, 112, 106, 0.45); }
 
+/* Short laptop screens: tighten the text screens so nothing is cut */
+@media (min-width: 961px) and (max-height: 780px) {
+  .flow li { padding: 9px 0; }
+  .volume { margin-top: 12px; }
+  .formula__line { padding: 12px 0 16px; }
+  .formula__terms { gap: 10px 24px; margin-top: 14px; }
+  .formula__example { margin-top: 14px; }
+  .checks li { padding: 10px 0; }
+}
+
 /* Mobile: the device sits on top and stays small */
 @media (max-width: 960px) {
   .monitor--story { max-width: none; }
@@ -270,6 +294,10 @@
   .screen-foot { display: none; }
   .flow li { padding: 6px 0; gap: 10px; }
   .flow__what { display: none; }
+  .volume { gap: 10px; margin-top: 10px; }
+  .volume__n { font-size: 15px; }
+  .volume__l { font-size: 11px; }
+  .volume__bar { margin-top: 5px; }
   .screen--center { justify-content: flex-start; padding-bottom: 0; }
   .formula__line { padding: 18px 0 16px; }
   .formula__terms { display: none; }
@@ -313,10 +341,10 @@
   transition: opacity 320ms ease;
 }
 .zoom-backdrop.is-on { opacity: 1; pointer-events: auto; cursor: zoom-out; }
-.zoom-lock { overflow: hidden; }
+body.zoom-lock { overflow: hidden; } /* on body: it passes to the viewport, so the sticky layout does not move */
 .zoom-host { z-index: 95 !important; }
 .monitor.is-full { position: fixed; z-index: 90; margin: 0; max-width: none; }
-.monitor.is-full::before { inset: -8%; }
+.monitor.is-full::before { inset: -8% 0; }
 .monitor.is-full .crt { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .monitor.is-full .crt__screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .monitor.is-full .screens { flex: 1; min-height: 0; }
@@ -343,3 +371,43 @@
 .monitor.is-animating .crt__screen * { text-shadow: none !important; }
 .monitor.is-animating { contain: layout; }
 .monitor.is-animating .chart { will-change: transform; }
+
+/* View Transition of the monitor (zoom.js). The browser animates snapshots on the GPU.
+   Both snapshots keep their own aspect: sized by height, centred, clipped by the morphing box.
+   The old monitor grows uniformly, the new wider one is revealed behind it, then the old one fades.
+   Exit is the mirror image, with the wide screen shrinking to fit the width. */
+:root { view-transition-name: none; } /* capture only the monitor, never the whole page */
+::view-transition-group(ga-monitor) {
+  animation-duration: 360ms;
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.15, 1);
+}
+:root[data-vt="exit"]::view-transition-group(ga-monitor) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.15, 1);
+}
+::view-transition-image-pair(ga-monitor) {
+  border-radius: var(--radius-bezel); overflow: clip;
+  background: #101113; /* the revealed monitor fades in over a dark base: a shadow effect with opacity only */
+}
+::view-transition-old(ga-monitor), ::view-transition-new(ga-monitor) {
+  inline-size: auto; block-size: 100%;
+  inset-inline-start: 50%; translate: -50% 0;
+  mix-blend-mode: normal;
+}
+:root[data-vt="exit"]::view-transition-old(ga-monitor) {
+  inline-size: 100%; block-size: auto;
+  inset-inline-start: 0; inset-block-start: 50%; translate: 0 -50%;
+}
+::view-transition-new(ga-monitor) { animation: 360ms ease-out both vt-in; }
+::view-transition-old(ga-monitor) { z-index: 1; animation: 360ms linear both vt-out; }
+:root[data-vt="exit"]::view-transition-new(ga-monitor) { animation-duration: 300ms; }
+:root[data-vt="exit"]::view-transition-old(ga-monitor) { animation-duration: 300ms; }
+@keyframes vt-out { 0%, 30% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@keyframes vt-in { 0% { opacity: 0.35; } 75%, 100% { opacity: 1; } }
+
+/* The captured new state is "lite": no halo, no big outer shadows, no chart. They return right after. */
+.monitor.vt-lite::before { display: none; }
+.monitor.vt-lite .crt { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 0 0 1px #070809; }
+.monitor.vt-lite .monitor__foot { box-shadow: none; }
+.monitor .chart { transition: opacity 140ms ease-out; }        /* fade back in after landing */
+.monitor.vt-lite .chart { opacity: 0; transition: none; }    /* hide at once, before the snapshot */

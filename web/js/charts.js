@@ -23,12 +23,27 @@ GA.charts = (function () {
     `<div style="display:flex;justify-content:space-between;gap:16px"><span style="color:${C.dim}">${label}</span>` +
     `<span style="font-family:${C.num};font-weight:600;color:${color || C.amber}">${value}</span></div>`;
 
-  const stub = { setOption() {}, resize() {}, clear() {} };
+  const stub = { setOption() {}, resize() {}, clear() {}, getDom: () => document.body, getZr: () => ({ refreshImmediately() {} }) };
 
   // While a monitor animates to or from full screen, charts skip resizing; they resize once at the end.
   const all = [];
   let held = false;
-  function hold(on) { held = on; if (!on) all.forEach((c) => c.resize()); }
+  // within: an element (the monitor). Only charts visible inside it are resized and painted now, in sync,
+  // so a View Transition snapshot shows them at the new size. All others resize on the next frame.
+  // Resize observers stay muted until that next frame, so each chart resizes exactly once per toggle.
+  function hold(on, within) {
+    held = on;
+    if (on) return;
+    if (!within) { all.forEach((c) => c.resize()); return; }
+    held = true;
+    const later = [];
+    all.forEach((c) => {
+      const el = c.getDom();
+      const now = within.contains(el) && el.checkVisibility && el.checkVisibility({ visibilityProperty: true });
+      if (now) { c.resize(); c.getZr().refreshImmediately(); } else later.push(c);
+    });
+    requestAnimationFrame(() => { held = false; later.forEach((c) => c.resize()); });
+  }
 
   /** Round up to 1, 1.5, 2, 2.5, 3, 4 or 5 × 10^n, so axis ticks land on clean numbers. */
   function niceStep(x) {
@@ -42,7 +57,9 @@ GA.charts = (function () {
       el.innerHTML = '<p class="chart-missing">Chart library did not load.</p>';
       return stub;
     }
-    const chart = echarts.init(el, null, { renderer: "canvas", useDirtyRect: true });
+    // No useDirtyRect: it only pays off for small partial updates; our charts animate as a whole
+    // (replays, resizes), where its repaint-rect bookkeeping costs more than it saves (profiled).
+    const chart = echarts.init(el, null, { renderer: "canvas" });
     // Coalesce resize bursts (window drag, layout settling) into one resize per frame.
     let raf = 0;
     new ResizeObserver(() => {
