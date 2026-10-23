@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GreeksAddicted · SPY dealer gamma</title>
+  <meta name="description" content="SPY dealer gamma exposure (GEX), rebuilt from CBOE option chains by a KNIME ETL pipeline.">
+  <meta name="theme-color" content="#111214">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/terminal.css">
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="wordmark" href="#top">Greeks<span>Addicted</span></a>
+      <span class="demo-badge" data-demo-badge hidden>Demo data</span>
+      <nav class="topnav" aria-label="Sections">
+        <a href="#strike">Gamma</a>
+        <a href="#intraday">Intraday</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#formula">Formula</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Progress">
+    <a href="#top" data-rail="top"><span class="num">01</span><span class="rail__label">Today</span></a>
+    <a href="#strike" data-rail="strike"><span class="num">02</span><span class="rail__label">By strike</span></a>
+    <a href="#intraday" data-rail="intraday"><span class="num">03</span><span class="rail__label">Intraday</span></a>
+    <a href="#pipeline" data-rail="pipeline"><span class="num">04</span><span class="rail__label">Pipeline</span></a>
+    <a href="#formula" data-rail="formula"><span class="num">05</span><span class="rail__label">Formula</span></a>
+    <a href="#assumptions" data-rail="assumptions"><span class="num">06</span><span class="rail__label">Assumptions</span></a>
+    <a href="#faq" data-rail="faq"><span class="num">07</span><span class="rail__label">FAQ</span></a>
+    <a href="#about" data-rail="about"><span class="num">08</span><span class="rail__label">About</span></a>
+  </nav>
+
+  <main id="content">
+    <!-- 01 · Hero -->
+    <section class="hero" id="top" data-section="top">
+      <h1 class="hero__title">Greeks<span>Addicted</span></h1>
+      <p class="hero__lede">Dealer gamma exposure for SPY, rebuilt from CBOE option chains every 5 minutes.</p>
+
+      <div class="monitor monitor--hero">
+      <div class="crt crt--hero">
+        <div class="crt__screen crt__screen--boot">
+          <div class="titlebar" aria-hidden="true">
+            <span class="titlebar__lights"><i></i><i></i><i></i></span>
+            <span class="titlebar__title">SPY · Dealer gamma</span>
+          </div>
+          <div class="term-head">
+            <span class="ticker">SPY US Equity · GEX</span>
+            <span class="term-time">As of <span class="num" data-bind="asof">–</span></span>
+          </div>
+          <dl class="stats">
+            <div><dt>Spot</dt><dd class="num amber" data-bind="spot">–</dd></div>
+            <div><dt>Net GEX</dt><dd class="num" data-bind="total_gex" data-sign>–</dd></div>
+            <div><dt data-def="call_wall">Call wall</dt><dd class="num call" data-bind="call_wall">–</dd></div>
+            <div><dt data-def="put_wall">Put wall</dt><dd class="num put" data-bind="put_wall">–</dd></div>
+          </dl>
+          <div class="chart-head">
+            <span>Gamma by strike, $bn per 1% move</span>
+            <span class="legend"><i class="sw sw--call"></i>Calls <i class="sw sw--put"></i>Puts</span>
+          </div>
+          <div class="chart chart--hero" id="chart-hero" role="img" aria-label="Bar chart of dealer gamma by strike around spot"></div>
+          <div class="term-status">
+            <span class="term-feed"><i class="pulse"></i>CBOE delayed quotes</span>
+            <span class="regime" data-regime>–</span>
+          </div>
+        </div>
+        <div class="crt__chin" aria-hidden="true">
+          <span class="crt__controls"><i class="crt__knob"></i><i class="crt__knob"></i><i class="crt__led" data-led></i></span>
+        </div>
+      </div>
+      <div class="monitor__stand" aria-hidden="true"><i class="monitor__neck"></i><i class="monitor__foot"></i></div>
+      </div>
+      <p class="hero__caption">Scroll to see how the number is built.</p>
+    </section>
+
+    <!-- 02–06 · Story: text left, fixed terminal right -->
+    <div class="story">
+      <div class="story__steps">
+        <article class="step" id="strike" data-section="strike" data-screen="strike">
+          <p class="kicker"><span class="badge num">Γ 02</span>Gamma by strike</p>
+          <h2>Where the walls are</h2>
+          <p>Each bar is dealer gamma at one strike. Green bars are calls and red bars are puts. The tallest call bar is the call wall. The deepest put bar is the put wall.</p>
+          <p data-bind="strike_story">–</p>
+          <dl class="facts">
+            <div><dt data-def="call_wall">Call wall</dt><dd class="num call" data-bind="call_wall">–</dd></div>
+            <div><dt data-def="put_wall">Put wall</dt><dd class="num put" data-bind="put_wall">–</dd></div>
+            <div><dt>Net GEX</dt><dd class="num" data-bind="total_gex" data-sign>–</dd></div>
+          </dl>
+        </article>
+
+        <article class="step" id="intraday" data-section="intraday" data-screen="intraday">
+          <p class="kicker"><span class="badge num">Γ 03</span>Price and gamma</p>
+          <h2>How gamma moves with price</h2>
+          <p>Every 5 minutes the pipeline stores a new snapshot. The amber line is the SPY price. The bars are net gamma at the same market time.</p>
+          <p>When net gamma is positive, dealers sell rallies and buy dips, so moves tend to shrink. When it is negative, they do the opposite, so moves tend to grow.</p>
+        </article>
+
+        <article class="step" id="pipeline" data-section="pipeline" data-screen="pipeline">
+          <p class="kicker"><span class="badge num">Γ 04</span>Pipeline</p>
+          <h2>From CBOE to this page</h2>
+          <p>Five KNIME workflows do the work, run headless from the command line. Extract pulls the full SPY option chain and the price. Transform parses about 12,700 contracts and keeps the ones with open interest and gamma.</p>
+          <p>Compute sums gamma per strike into a SQLite database. Export writes the small files this page reads, as JSON, CSV and XML.</p>
+          <ul class="downloads">
+            <li><a href="data/gex_snapshot.json">gex_snapshot.json</a></li>
+            <li><a href="data/gex_strike_latest.csv">gex_strike_latest.csv</a></li>
+            <li><a href="data/gex_daily.xml">gex_daily.xml</a></li>
+          </ul>
+        </article>
+
+        <article class="step" id="formula" data-section="formula" data-screen="formula">
+          <p class="kicker"><span class="badge num">Γ 05</span>Formula</p>
+          <h2>One line of maths</h2>
+          <p>For each contract, gamma times open interest is how much the dealers' delta changes when SPY moves $1. Times 100 shares per contract gives shares. Times spot squared and 1% gives dollars of hedging per 1% move.</p>
+          <p>Calls count as positive and puts as negative. The sum over all contracts is net GEX.</p>
+        </article>
+
+        <article class="step" id="assumptions" data-section="assumptions" data-screen="assumptions">
+          <p class="kicker"><span class="badge num">Γ 06</span>Assumptions</p>
+          <h2>What the number assumes</h2>
+          <p>Open interest does not say who holds an option. So GEX needs a guess about the other side of each trade. This page uses the common one: customers buy puts and sell calls, so dealers are long calls and short puts.</p>
+          <p>The guess is wrong on some days. Read GEX as a rough map of hedging pressure, not as a forecast.</p>
+        </article>
+      </div>
+
+      <div class="story__device">
+        <div class="monitor monitor--story">
+        <div class="crt crt--story" data-device>
+          <div class="crt__screen">
+            <div class="titlebar" aria-hidden="true">
+              <span class="titlebar__lights"><i></i><i></i><i></i></span>
+              <span class="titlebar__title" data-title>Gamma by strike</span>
+            </div>
+            <div class="term-head">
+              <span class="ticker" data-ticker>SPY US Equity · GEX</span>
+              <span class="term-time"><span class="num" data-bind="asof">–</span></span>
+            </div>
+            <div class="screens">
+              <section class="screen is-active" data-screen-id="strike" data-wt="Gamma by strike" aria-label="Gamma by strike">
+                <div class="chart-head">
+                  <span>Gamma by strike, $bn per 1% move</span>
+                  <span class="legend"><i class="sw sw--call"></i>Calls <i class="sw sw--put"></i>Puts</span>
+                </div>
+                <div class="chart chart--story" id="chart-strike" role="img" aria-label="Bar chart of call and put gamma by strike"></div>
+                <p class="screen-foot">Drag the chart sideways for more strikes. Shift + scroll zooms.</p>
+              </section>
+
+              <section class="screen" data-screen-id="intraday" data-wt="Price and gamma" aria-label="Price and net gamma over the session">
+                <div class="chart-head">
+                  <span>SPY price and net gamma, ET</span>
+                  <span class="legend"><i class="sw sw--amber"></i>Price <i class="sw sw--call"></i>GEX + <i class="sw sw--put"></i>GEX −</span>
+                </div>
+                <div class="chart chart--story" id="chart-intraday" role="img" aria-label="Line of SPY price over bars of net gamma"></div>
+                <p class="screen-note" data-intraday-note hidden></p>
+              </section>
+
+              <section class="screen screen--center" data-screen-id="pipeline" data-wt="Pipeline" aria-label="Pipeline row counts">
+                <ol class="flow">
+                  <li><span class="flow__id num">01</span><span class="flow__name">Extract CBOE chain</span><span class="flow__what">raw snapshots</span><span class="flow__n num" data-bind="raw_snapshots">–</span></li>
+                  <li><span class="flow__id num">02</span><span class="flow__name">Extract SPY price</span><span class="flow__what">price ticks</span><span class="flow__n num" data-bind="price_ticks">–</span></li>
+                  <li><span class="flow__id num">03</span><span class="flow__name">Transform options</span><span class="flow__what">option rows</span><span class="flow__n num" data-bind="option_rows">–</span></li>
+                  <li><span class="flow__id num">04</span><span class="flow__name">Compute GEX</span><span class="flow__what">GEX snapshots</span><span class="flow__n num" data-bind="gex_snapshots">–</span></li>
+                  <li><span class="flow__id num">05</span><span class="flow__name">Export</span><span class="flow__what">files for this page</span><span class="flow__n num">4</span></li>
+                </ol>
+                <p class="screen-foot">Orchestrated by <span class="amber">00-orchestrator</span>. Data exported <span class="num" data-bind="generated">–</span>.</p>
+              </section>
+
+              <section class="screen screen--center" data-screen-id="formula" data-wt="Formula" aria-label="GEX formula">
+                <div class="formula">
+                  <p class="formula__line"><span class="amber">GEX</span> = Σ <span class="sign">±</span> Γ · OI · <span class="num">100</span> · S² · <span class="num">0.01</span></p>
+                  <dl class="formula__terms">
+                    <div><dt>Γ</dt><dd>Gamma of the contract, from CBOE</dd></div>
+                    <div><dt>OI</dt><dd>Open interest, contracts held overnight</dd></div>
+                    <div><dt class="num">100</dt><dd>Shares per contract</dd></div>
+                    <div><dt>S</dt><dd>Spot price of SPY</dd></div>
+                    <div><dt class="num">0.01</dt><dd>A 1% move</dd></div>
+                    <div><dt>±</dt><dd><span class="call">+ calls</span>, <span class="put">− puts</span></dd></div>
+                  </dl>
+                </div>
+                <div class="formula__example" data-example hidden>
+                  <p class="formula__example-head">Worked example: the <span data-bind="ex_label">–</span> call</p>
+                  <p class="formula__example-line"><span class="num" data-bind="ex_gamma">–</span> · <span class="num" data-bind="ex_oi">–</span> · <span class="num">100</span> · <span class="num" data-bind="ex_spot">–</span>² · <span class="num">0.01</span> = <span class="num call" data-bind="ex_gex">–</span></p>
+                </div>
+                <p class="formula__today">All contracts: calls <span class="call num" data-bind="call_gex">–</span>, puts <span class="put num" data-bind="put_gex">–</span>, net <span class="num" data-bind="total_gex" data-sign>–</span></p>
+              </section>
+
+              <section class="screen screen--center" data-screen-id="assumptions" data-wt="Assumptions" aria-label="Assumptions and limits">
+                <ul class="checks">
+                  <li><span class="dot dot--amber"></span><div><b>Dealers long calls, short puts</b><span>The standard guess. Real positions are not public.</span></div></li>
+                  <li><span class="dot dot--amber"></span><div><b>Open interest is from the last close</b><span>CBOE updates it once a day, before the open.</span></div></li>
+                  <li><span class="dot dot--put"></span><div><b>Same-day options are missing</b><span>0DTE trades open and close inside the day, so they never reach open interest.</span></div></li>
+                  <li><span class="dot dot--put"></span><div><b>Quotes are delayed about 15 minutes</b><span>Free CBOE data. Times on this page are market times.</span></div></li>
+                </ul>
+              </section>
+            </div>
+            <div class="term-status">
+              <span class="regime" data-regime>–</span>
+              <span class="term-count"><span class="num" data-screen-n>1</span><span class="term-count__of">/</span><span class="num">5</span><i class="cursor"></i></span>
+            </div>
+          </div>
+          <div class="crt__chin" aria-hidden="true">
+          <span class="crt__controls"><i class="crt__knob"></i><i class="crt__knob"></i><i class="crt__led" data-led></i></span>
+        </div>
+        </div>
+        <div class="monitor__stand" aria-hidden="true"><i class="monitor__neck"></i><i class="monitor__foot"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 · FAQ -->
+    <section class="faq" id="faq" data-section="faq">
+      <div class="section-head">
+        <p class="kicker"><span class="badge num">Γ 07</span>Questions</p>
+        <h2>Frequently asked</h2>
+        <p>Short answers to the questions people ask first.</p>
+      </div>
+      <div class="faq__list">
+        <details>
+          <summary><span>What is gamma?</span></summary>
+          <p>Delta is how much an option's price moves when the stock moves $1. Gamma is how fast delta changes. It is highest for options with a strike near the price and close to expiry.</p>
+        </details>
+        <details>
+          <summary><span>What does a GEX of <span class="num" data-bind="total_gex" data-sign>–</span> mean?</span></summary>
+          <p>For every 1% move in SPY, dealers must trade about that many dollars of SPY to stay hedged. When the number is negative, they trade in the same direction as the move, so they push it further.</p>
+        </details>
+        <details>
+          <summary><span>Why do deep in-the-money or out-of-the-money options have almost no gamma?</span></summary>
+          <p>Their delta is already close to 1 or close to 0. A small move in the stock barely changes it. So they add almost nothing to GEX, even with large open interest.</p>
+        </details>
+        <details>
+          <summary><span>Why per 1% move and not per $1?</span></summary>
+          <p>A 1% move is a fair yardstick at any price level. The S² · 0.01 term converts gamma, which is per $1, into dollars of hedging per 1% move. It also makes GEX comparable across days.</p>
+        </details>
+        <details>
+          <summary><span>What is Black-Scholes?</span></summary>
+          <p>A model that prices an option from the stock price, the strike, the time to expiry, interest rates and volatility. Greeks such as gamma come out of models like it. This page uses the gamma that CBOE publishes for each contract and does not recompute it.</p>
+        </details>
+        <details>
+          <summary><span>Why assume customers sell calls and buy puts?</span></summary>
+          <p>Many investors buy puts as insurance and sell calls against stock they own. Dealers take the other side. It is a convention, not a fact. On some days customers buy calls in size, and the sign of GEX is then wrong.</p>
+        </details>
+        <details>
+          <summary><span>Do 0DTE and expiry days make the data messy? Is CBOE data real at the open and close?</span></summary>
+          <p>Yes, in part. Same-day options never reach open interest, so GEX misses them. On expiry days a large block of open interest disappears at once, so GEX jumps. CBOE quotes are real but delayed about 15 minutes, and open interest changes only once a day.</p>
+        </details>
+        <details>
+          <summary><span>What would real positioning data cost?</span></summary>
+          <p>Cboe Open-Close data splits volume by customer type and by opening or closing trades. End-of-day data costs about $600 a month. That is outside the scope of this project.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <!-- 08 · About -->
+  <footer class="footer" id="about" data-section="about">
+    <div class="footer__inner">
+      <div>
+        <a class="wordmark" href="#top">Greeks<span>Addicted</span></a>
+        <p>An ETL project for ISI, LESI at UPCA, 2026/27. Built with KNIME, SQLite and ECharts.</p>
+      </div>
+      <dl class="footer__meta">
+        <div><dt>Source</dt><dd>CBOE delayed quotes, FMP price</dd></div>
+        <div><dt>Exported</dt><dd class="num" data-bind="generated">–</dd></div>
+      </dl>
+    </div>
+  </footer>
+
+  <noscript><p class="noscript">This page needs JavaScript to draw the charts.</p></noscript>
+
+  <script src="data/data.js"></script>
+  <script src="vendor/echarts.min.js"></script><!-- Apache ECharts 5.5.1, Apache-2.0, vendored so the page works offline -->
+
+  <script src="js/format.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

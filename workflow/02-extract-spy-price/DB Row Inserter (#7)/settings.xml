@@ -11,7 +11,7 @@
             <entry key="schemaName" type="xstring" value=""/>
             <entry key="tableName" type="xstring" value="price_tick"/>
         </config>
-        <entry key="actionOnDBError" type="xstring" value="FAIL"/>
+        <entry key="actionOnDBError" type="xstring" value="IGNORE"/>
         <entry key="batchSize" type="xint" value="1000"/>
         <entry key="allowSetColumns" type="xboolean" value="true"/>
         <entry key="allowWhereColumns" type="xboolean" value="false"/>

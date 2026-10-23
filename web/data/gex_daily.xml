@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gex_daily ticker="SPY" unit="USD per 1% move">
+  <day date="2026-10-22" market_ts_utc="2026-10-22T19:59:59Z" spot="762.39" total_gex="-14331376192.2335" call_wall="765.0" put_wall="750.0"/>
+  <day date="2026-10-23" market_ts_utc="2026-10-23T14:56:59Z" spot="762.86" total_gex="-14287600491.4887" call_wall="770.0" put_wall="760.0"/>
+</gex_daily>

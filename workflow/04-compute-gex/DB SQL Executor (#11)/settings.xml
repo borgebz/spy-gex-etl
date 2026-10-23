@@ -6,8 +6,8 @@
         <entry key="memory_policy" type="xstring" value="CacheSmallInMemory"/>
     </config>
     <config key="model">
-        <entry key="statement" type="xstring" value="CREATE TABLE IF NOT EXISTS gex_snapshot (%%00010    snapshot_ts_utc TEXT PRIMARY KEY,%%00010    market_ts_utc   TEXT NOT NULL,%%00010    spot            REAL NOT NULL,%%00010    call_gex        REAL NOT NULL,%%00010    put_gex         REAL NOT NULL,%%00010    total_gex       REAL NOT NULL,%%00010    call_wall       REAL NOT NULL,%%00010    put_wall        REAL NOT NULL%%00010);"/>
-        <entry key="multipleStatement" type="xboolean" value="false"/>
+        <entry key="statement" type="xstring" value="CREATE TABLE IF NOT EXISTS gex_snapshot (%%00010    snapshot_ts_utc TEXT PRIMARY KEY,%%00010    market_ts_utc   TEXT NOT NULL UNIQUE,   -- one row per market time%%00010    spot            REAL NOT NULL,%%00010    call_gex        REAL NOT NULL,%%00010    put_gex         REAL NOT NULL,%%00010    total_gex       REAL NOT NULL,%%00010    call_wall       REAL NOT NULL,%%00010    put_wall        REAL NOT NULL%%00010);%%00010%%00010-- a newer CBOE file for the same market time replaces the stored GEX row%%00010DELETE FROM gex_snapshot%%00010WHERE EXISTS (SELECT 1 FROM option_snapshot o%%00010              WHERE o.market_ts_utc = gex_snapshot.market_ts_utc%%00010                AND o.snapshot_ts_utc > gex_snapshot.snapshot_ts_utc);%%00010%%00010-- drop strike rows whose snapshot has no GEX row%%00010DELETE FROM gex_strike%%00010WHERE snapshot_ts_utc NOT IN (SELECT snapshot_ts_utc FROM gex_snapshot);"/>
+        <entry key="multipleStatement" type="xboolean" value="true"/>
         <entry key="statementSeparator" type="xstring" value=";"/>
     </config>
     <config key="variables"/>

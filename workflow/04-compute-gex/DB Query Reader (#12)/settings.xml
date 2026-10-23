@@ -6,7 +6,7 @@
         <entry key="memory_policy" type="xstring" value="CacheSmallInMemory"/>
     </config>
     <config key="model">
-        <entry key="sql_statement" type="xstring" value="SELECT * FROM option_snapshot%%00010WHERE snapshot_ts_utc NOT IN (SELECT snapshot_ts_utc FROM gex_snapshot);"/>
+        <entry key="sql_statement" type="xstring" value="-- one CBOE file per market time: the latest one%%00010SELECT o.*%%00010FROM option_snapshot o%%00010JOIN (SELECT market_ts_utc, MAX(snapshot_ts_utc) AS latest_snapshot%%00010      FROM option_snapshot GROUP BY market_ts_utc) l%%00010  ON o.snapshot_ts_utc = l.latest_snapshot%%00010WHERE o.market_ts_utc NOT IN (SELECT market_ts_utc FROM gex_snapshot);"/>
         <config key="inputTypeMapping">
             <config key="byNameSettings"/>
             <config key="byTypeSettings"/>

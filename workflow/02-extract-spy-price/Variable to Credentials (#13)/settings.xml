@@ -6,9 +6,25 @@
         <entry key="memory_policy" type="xstring" value="CacheSmallInMemory"/>
     </config>
     <config key="model">
+        <config key="credentialsName_Internals">
+            <entry key="SettingsModelID" type="xstring" value="SMID_string"/>
+            <entry key="EnabledStatus" type="xboolean" value="true"/>
+        </config>
         <entry key="credentialsName" type="xstring" value="fmp_key"/>
+        <config key="usernameVarName_Internals">
+            <entry key="SettingsModelID" type="xstring" value="SMID_string"/>
+            <entry key="EnabledStatus" type="xboolean" value="true"/>
+        </config>
         <entry key="usernameVarName" type="xstring" value="&lt;none&gt;"/>
+        <config key="passwordVarName_Internals">
+            <entry key="SettingsModelID" type="xstring" value="SMID_string"/>
+            <entry key="EnabledStatus" type="xboolean" value="true"/>
+        </config>
         <entry key="passwordVarName" type="xstring" value="FMP_API_Authorization_Header"/>
+        <config key="secondFactorVarName_Internals">
+            <entry key="SettingsModelID" type="xstring" value="SMID_string"/>
+            <entry key="EnabledStatus" type="xboolean" value="true"/>
+        </config>
         <entry key="secondFactorVarName" type="xstring" value="&lt;none&gt;"/>
     </config>
     <config key="variables"/>
