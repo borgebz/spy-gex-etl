@@ -14,7 +14,7 @@
                 <entry key="location_present" type="xboolean" value="true"/>
                 <entry key="file_system_type" type="xstring" value="RELATIVE"/>
                 <entry key="file_system_specifier" type="xstring" value="knime.space"/>
-                <entry key="path" type="xstring" value="04-compute-gex"/>
+                <entry key="path" type="xstring" value="03-transform-options"/>
             </config>
             <config key="filter_mode">
                 <entry key="filter_mode" type="xstring" value="FILE"/>
@@ -61,30 +61,14 @@
         </config>
         <entry key="workflowConnectionIsLoading" type="xboolean" value="false"/>
         <config key="calleeProperties">
-            <config key="inputs">
-                <config key="input-0">
-                    <entry key="parameterName" type="xstring" value="input-parameter"/>
-                    <entry key="parameterDescription" type="xstring" isnull="true" value=""/>
-                    <config key="portType">
-                        <entry key="object_class" type="xstring" value="org.knime.core.node.BufferedDataTable"/>
-                    </config>
-                </config>
-            </config>
-            <config key="outputs">
-                <config key="output-0">
-                    <entry key="parameterName" type="xstring" value="output-parameter"/>
-                    <entry key="parameterDescription" type="xstring" isnull="true" value=""/>
-                    <config key="portType">
-                        <entry key="object_class" type="xstring" value="org.knime.core.node.BufferedDataTable"/>
-                    </config>
-                </config>
-            </config>
+            <config key="inputs"/>
+            <config key="outputs"/>
         </config>
         <entry key="hasWorkflowParametersError" type="xboolean" value="false"/>
     </config>
     <config key="variables"/>
     <entry key="customDescription" type="xstring" isnull="true" value=""/>
-    <entry key="state" type="xstring" value="IDLE"/>
+    <entry key="state" type="xstring" value="EXECUTED"/>
     <entry key="factory" type="xstring" value="org.knime.workflowservices.knime.caller2.CallWorkflow2NodeFactory"/>
     <entry key="node-name" type="xstring" value="Call Workflow Service"/>
     <entry key="node-bundle-name" type="xstring" value="KNIME Nodes to build and use KNIME workflow services"/>
@@ -98,28 +82,19 @@
     <config key="factory_settings"/>
     <config key="node_creation_config">
         <config key="File System Connection"/>
-        <config key="Inputs">
-            <config key="port_0">
-                <entry key="object_class" type="xstring" value="org.knime.core.node.BufferedDataTable"/>
-            </config>
-        </config>
-        <config key="Outputs">
-            <config key="port_0">
-                <entry key="object_class" type="xstring" value="org.knime.core.node.BufferedDataTable"/>
-            </config>
-        </config>
+        <config key="Inputs"/>
+        <config key="Outputs"/>
     </config>
     <entry key="name" type="xstring" value="Call Workflow Service"/>
-    <entry key="hasContent" type="xboolean" value="false"/>
+    <entry key="hasContent" type="xboolean" value="true"/>
     <entry key="isInactive" type="xboolean" value="false"/>
-    <config key="ports">
-        <config key="port_1">
-            <entry key="index" type="xint" value="1"/>
-            <entry key="port_dir_location" type="xstring" isnull="true" value=""/>
-        </config>
+    <config key="ports"/>
+    <config key="internalObjects">
+        <entry key="location" type="xstring" value="internalTables"/>
+        <config key="content"/>
     </config>
     <config key="filestores">
         <entry key="file_store_location" type="xstring" isnull="true" value=""/>
-        <entry key="file_store_id" type="xstring" isnull="true" value=""/>
+        <entry key="file_store_id" type="xstring" value="64e6d65f-56b0-4195-aadf-3fd42419f531"/>
     </config>
 </config>
