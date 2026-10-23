@@ -11,5 +11,13 @@ workflow/.metadata/
 # Local config with secrets / machine paths
 workflow/config.json
 
+# SQLite database (built by the workflows) + WAL files
+workflow/data/*.db
+workflow/data/*.db-wal
+workflow/data/*.db-shm
+
+# Option snapshot archive (written by scripts/archive_db.py, ~13 MB per day)
+workflow/data/archive/
+
 .DS_Store
 
