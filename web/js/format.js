@@ -13,6 +13,7 @@ GA.fmt = (function () {
     timeZone: "America/New_York", hour: "numeric", minute: "numeric", hourCycle: "h23",
   });
 
+  const etDate = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" });
   const signed = (text, v) => (v < 0 ? MINUS + text : v > 0 ? "+" + text : text);
 
   return {
@@ -38,6 +39,8 @@ GA.fmt = (function () {
     },
     /** ms or ISO → "15:59" */
     hhmm(t) { return etTime.format(new Date(t)); },
+    /** ISO UTC → "2026-10-23", the trading date in New York */
+    etDay(iso) { return etDate.format(new Date(iso)); },
     /** Minutes since midnight in New York, for the regular-session filter */
     etMinutes(iso) {
       const p = etParts.formatToParts(new Date(iso));

@@ -82,7 +82,7 @@
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function draw(D) {
-    GA.charts.strike(document.getElementById("chart-hero"), D, { window: 0.035, zoom: false, wallLabels: false });
+    replay.set("hero", GA.charts.strike(document.getElementById("chart-hero"), D, { window: 0.035, zoom: false, wallLabels: false }));
     const narrow = matchMedia("(max-width: 960px)").matches;
     replay.set("strike", GA.charts.strike(document.getElementById("chart-strike"), D, { window: narrow ? 0.035 : 0.06, range: 0.25 }));
     const intra = GA.charts.intraday(document.getElementById("chart-intraday"), D);
@@ -91,8 +91,8 @@
     if (intra.points < 2) {
       const note = document.querySelector("[data-intraday-note]");
       note.innerHTML =
-        `The pipeline has stored <span class="num">${intra.points}</span> intraday ` +
-        `snapshot${intra.points === 1 ? "" : "s"} so far. ` +
+        `The pipeline has stored <span class="num">${intra.points}</span> ` +
+        `snapshot${intra.points === 1 ? "" : "s"} for this session so far. ` +
         `This chart fills in as new snapshots arrive every 5 minutes.`;
       note.hidden = false;
     }
@@ -146,6 +146,23 @@
     }, middle);
     steps.forEach((s) => stepObs.observe(s));
     steps.get(current).classList.add("is-active");
+
+    // Full screen (green traffic light). Inside it, arrow keys roll between screens.
+    const play = (id) => { const r = replay.get(id); if (r && r.opt && !calm) { r.chart.clear(); r.chart.setOption(r.opt); } };
+    GA.zoom.init(document.querySelector('[data-monitor="hero"]'), { onEnter: () => play("hero"), onExit: () => play("hero") });
+    GA.zoom.init(document.querySelector('[data-monitor="story"]'), {
+      onEnter: () => play(current),
+      onExit: () => play(current),
+      // Leave the page where the screen now is, so the monitor lands next to the matching text.
+      beforeExit: () => steps.get(current).scrollIntoView({ block: "center", behavior: "instant" }),
+      onKey(e) {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        const next = order[Math.min(order.length - 1, Math.max(0, order.indexOf(current) + step))];
+        showScreen(next);
+      },
+    });
 
     const sectionObs = new IntersectionObserver((entries) => {
       entries.forEach((e) => e.isIntersecting && markSection(e.target.dataset.section));

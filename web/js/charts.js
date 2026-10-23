@@ -1,4 +1,6 @@
-/* ECharts builders (SVG renderer). Colours come from css/tokens.css. */
+/* ECharts builders. Colours come from css/tokens.css.
+   Canvas renderer (not SVG): hundreds of bars as SVG nodes were the main cost when charts replay or
+   resize. Canvas draws at devicePixelRatio, so it stays sharp on retina screens. */
 window.GA = window.GA || {};
 
 GA.charts = (function () {
@@ -21,7 +23,12 @@ GA.charts = (function () {
     `<div style="display:flex;justify-content:space-between;gap:16px"><span style="color:${C.dim}">${label}</span>` +
     `<span style="font-family:${C.num};font-weight:600;color:${color || C.amber}">${value}</span></div>`;
 
-  const stub = { setOption() {}, resize() {} };
+  const stub = { setOption() {}, resize() {}, clear() {} };
+
+  // While a monitor animates to or from full screen, charts skip resizing; they resize once at the end.
+  const all = [];
+  let held = false;
+  function hold(on) { held = on; if (!on) all.forEach((c) => c.resize()); }
 
   /** Round up to 1, 1.5, 2, 2.5, 3, 4 or 5 × 10^n, so axis ticks land on clean numbers. */
   function niceStep(x) {
@@ -35,8 +42,15 @@ GA.charts = (function () {
       el.innerHTML = '<p class="chart-missing">Chart library did not load.</p>';
       return stub;
     }
-    const chart = echarts.init(el, null, { renderer: "svg" });
-    new ResizeObserver(() => chart.resize()).observe(el);
+    const chart = echarts.init(el, null, { renderer: "canvas", useDirtyRect: true });
+    // Coalesce resize bursts (window drag, layout settling) into one resize per frame.
+    let raf = 0;
+    new ResizeObserver(() => {
+      if (held) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => chart.resize());
+    }).observe(el);
+    all.push(chart);
     return chart;
   }
 
@@ -45,7 +59,7 @@ GA.charts = (function () {
    * opts.window: ± fraction of spot shown at first. opts.range: ± fraction loaded (zoomable).
    */
   function strike(el, data, opts) {
-    const o = Object.assign({ window: 0.06, range: 0.25, zoom: true, wallLabels: true }, opts);
+    const o = Object.assign({ window: 0.06, range: 0.12, zoom: true, wallLabels: true }, opts);
     const { spot, call_wall, put_wall } = data.latest;
     const span = o.zoom ? o.range : o.window;
     const rows = data.strikes_latest.filter((r) => Math.abs(r.strike / spot - 1) <= span);
@@ -72,8 +86,8 @@ GA.charts = (function () {
 
     const chart = init(el);
     const opt = {
-      animationDuration: 520, animationEasing: "cubicOut", animationDelay: (i) => i * 2.5,
-      grid: { left: 40, right: 8, top: 22, bottom: 26 },
+      animationDuration: 420, animationEasing: "cubicOut", animationDurationUpdate: 250,
+      grid: { left: 4, right: 8, top: 22, bottom: 4, containLabel: true },
       tooltip: Object.assign({}, tooltip, {
         trigger: "axis", axisPointer: { type: "shadow", shadowStyle: { color: "rgba(255,179,71,0.06)" } },
         formatter(ps) {
@@ -93,7 +107,8 @@ GA.charts = (function () {
         splitLine: { lineStyle: { color: C.grid, type: [2, 4] } },
       },
       dataZoom: o.zoom ? [{
-        type: "inside", xAxisIndex: 0, filterMode: "none", zoomOnMouseWheel: "shift", moveOnMouseWheel: false,
+        // "filter" drops bars outside the window from rendering; "none" would still draw them all.
+        type: "inside", xAxisIndex: 0, filterMode: "filter", zoomOnMouseWheel: "shift", moveOnMouseWheel: false,
         startValue: inWindow.length ? f.strike(inWindow[0].strike) : undefined,
         endValue: inWindow.length ? f.strike(inWindow[inWindow.length - 1].strike) : undefined,
       }] : [],
@@ -117,13 +132,14 @@ GA.charts = (function () {
 
   /** SPY price (line, left axis) over net gamma (bars, right axis), regular session only. */
   function intraday(el, data) {
-    const rth = (iso) => { const m = f.etMinutes(iso); return m >= 570 && m <= 960; };
+    // Latest session only: regular hours (09:30–16:00 ET) on the market date of the newest snapshot.
+    const day = f.etDay(data.latest.market_ts_utc);
+    const rth = (iso) => { const m = f.etMinutes(iso); return f.etDay(iso) === day && m >= 570 && m <= 960; };
     const gex = data.gex_series.filter((g) => rth(g.market_ts_utc));
     // Contract rule: with no price ticks, use the spot stored with each GEX snapshot.
-    const source = data.prices && data.prices.length
-      ? data.prices
-      : data.gex_series.map((g) => ({ market_ts_utc: g.market_ts_utc, price: g.spot }));
-    const prices = source.filter((p) => rth(p.market_ts_utc));
+    // Applied per session: fewer than 2 ticks today cannot draw a line.
+    const ticks = (data.prices || []).filter((p) => rth(p.market_ts_utc));
+    const prices = ticks.length >= 2 ? ticks : gex.map((g) => ({ market_ts_utc: g.market_ts_utc, price: g.spot }));
     const opex = new Set(gex.filter((g) => g.is_opex).map((g) => g.market_ts_utc));
 
     // Explicit limits: flat or tiny series otherwise collapse the axis.
@@ -136,8 +152,8 @@ GA.charts = (function () {
 
     const chart = init(el);
     const opt = {
-      animationDuration: 520, animationEasing: "cubicOut",
-      grid: { left: 52, right: 40, top: 16, bottom: 26 },
+      animationDuration: 420, animationEasing: "cubicOut", animationDurationUpdate: 250,
+      grid: { left: 4, right: 4, top: 16, bottom: 4, containLabel: true },
       tooltip: Object.assign({}, tooltip, {
         trigger: "axis", axisPointer: { type: "line", lineStyle: { color: C.dim, type: [2, 3] } },
         formatter(ps) {
@@ -160,7 +176,7 @@ GA.charts = (function () {
         {
           type: "value",
           min: ps.length ? pMin : null, max: ps.length ? pMax : null, interval: ps.length ? pStep : null,
-          axisLabel: Object.assign({}, axisText, { formatter: (v) => (pStep < 1 ? v.toFixed(1) : v.toFixed(0)) }),
+          axisLabel: Object.assign({}, axisText, { formatter: (v) => v.toFixed(pStep < 1 ? (pStep % 0.5 ? 2 : 1) : 0) }),
           splitLine: { lineStyle: { color: C.grid, type: [2, 4] } },
         },
         {
@@ -171,7 +187,7 @@ GA.charts = (function () {
       ],
       series: [
         {
-          name: "Net GEX", type: "bar", yAxisIndex: 1, barMaxWidth: 6,
+          name: "Net GEX", type: "bar", yAxisIndex: 1, barMaxWidth: 10,
           data: gex.map((g) => ({
             value: [g.market_ts_utc, g.total_gex / 1e9],
             itemStyle: { color: g.total_gex < 0 ? C.put : C.call, opacity: 0.6 },
@@ -189,5 +205,5 @@ GA.charts = (function () {
     return { chart, opt, points: gex.length };
   }
 
-  return { strike, intraday };
+  return { strike, intraday, hold };
 })();

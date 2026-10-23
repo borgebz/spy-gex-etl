@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
-  <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/terminal.css">
+  <link rel="stylesheet" href="css/tokens.css?v=7">
+  <link rel="stylesheet" href="css/main.css?v=7">
+  <link rel="stylesheet" href="css/terminal.css?v=7">
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -48,11 +48,15 @@
       <h1 class="hero__title">Greeks<span>Addicted</span></h1>
       <p class="hero__lede">Dealer gamma exposure for SPY, rebuilt from CBOE option chains every 5 minutes.</p>
 
-      <div class="monitor monitor--hero">
+      <div class="monitor monitor--hero" data-monitor="hero">
       <div class="crt crt--hero">
         <div class="crt__screen crt__screen--boot">
-          <div class="titlebar" aria-hidden="true">
-            <span class="titlebar__lights"><i></i><i></i><i></i></span>
+          <div class="titlebar">
+            <span class="titlebar__lights">
+              <button type="button" class="tl tl--close" data-tl="exit" aria-label="Exit full screen" tabindex="-1"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3.2 3.2l3.6 3.6M6.8 3.2L3.2 6.8"/></svg></button>
+              <button type="button" class="tl tl--min" data-tl="exit" aria-label="Exit full screen" tabindex="-1"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2.6 5h4.8"/></svg></button>
+              <button type="button" class="tl tl--zoom" data-tl="zoom" aria-label="Enter full screen" aria-pressed="false" title="Enter full screen"><svg viewBox="0 0 10 10" aria-hidden="true"><path class="solid" d="M3.4 2.6h4v4z M6.6 7.4h-4v-4z"/></svg></button>
+            </span>
             <span class="titlebar__title">SPY · Dealer gamma</span>
           </div>
           <div class="term-head">
@@ -72,6 +76,7 @@
           <div class="chart chart--hero" id="chart-hero" role="img" aria-label="Bar chart of dealer gamma by strike around spot"></div>
           <div class="term-status">
             <span class="term-feed"><i class="pulse"></i>CBOE delayed quotes</span>
+            <span class="term-keys"><span class="keys-kbd"><kbd>Esc</kbd> exits</span><span class="keys-touch">Tap the red light to exit</span></span>
             <span class="regime" data-regime>–</span>
           </div>
         </div>
@@ -134,11 +139,15 @@
       </div>
 
       <div class="story__device">
-        <div class="monitor monitor--story">
+        <div class="monitor monitor--story" data-monitor="story">
         <div class="crt crt--story" data-device>
           <div class="crt__screen">
-            <div class="titlebar" aria-hidden="true">
-              <span class="titlebar__lights"><i></i><i></i><i></i></span>
+            <div class="titlebar">
+              <span class="titlebar__lights">
+                <button type="button" class="tl tl--close" data-tl="exit" aria-label="Exit full screen" tabindex="-1"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3.2 3.2l3.6 3.6M6.8 3.2L3.2 6.8"/></svg></button>
+                <button type="button" class="tl tl--min" data-tl="exit" aria-label="Exit full screen" tabindex="-1"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2.6 5h4.8"/></svg></button>
+                <button type="button" class="tl tl--zoom" data-tl="zoom" aria-label="Enter full screen" aria-pressed="false" title="Enter full screen"><svg viewBox="0 0 10 10" aria-hidden="true"><path class="solid" d="M3.4 2.6h4v4z M6.6 7.4h-4v-4z"/></svg></button>
+              </span>
               <span class="titlebar__title" data-title>Gamma by strike</span>
             </div>
             <div class="term-head">
@@ -152,7 +161,7 @@
                   <span class="legend"><i class="sw sw--call"></i>Calls <i class="sw sw--put"></i>Puts</span>
                 </div>
                 <div class="chart chart--story" id="chart-strike" role="img" aria-label="Bar chart of call and put gamma by strike"></div>
-                <p class="screen-foot">Drag the chart sideways for more strikes. Shift + scroll zooms.</p>
+                <p class="screen-foot">Drag for more strikes · Shift + scroll to zoom · Green light for full screen</p>
               </section>
 
               <section class="screen" data-screen-id="intraday" data-wt="Price and gamma" aria-label="Price and net gamma over the session">
@@ -205,6 +214,7 @@
             </div>
             <div class="term-status">
               <span class="regime" data-regime>–</span>
+              <span class="term-keys"><span class="keys-kbd"><kbd>←</kbd><kbd>→</kbd> change screen · <kbd>Esc</kbd> exits</span><span class="keys-touch">Tap the red light to exit</span></span>
               <span class="term-count"><span class="num" data-screen-n>1</span><span class="term-count__of">/</span><span class="num">5</span><i class="cursor"></i></span>
             </div>
           </div>
@@ -277,11 +287,12 @@
 
   <noscript><p class="noscript">This page needs JavaScript to draw the charts.</p></noscript>
 
-  <script src="data/data.js"></script>
-  <script src="vendor/echarts.min.js"></script><!-- Apache ECharts 5.5.1, Apache-2.0, vendored so the page works offline -->
+  <script defer src="data/data.js"></script>
+  <script defer src="vendor/echarts.min.js"></script><!-- Apache ECharts 5.5.1, Apache-2.0, vendored so the page works offline -->
 
-  <script src="js/format.js"></script>
-  <script src="js/charts.js"></script>
-  <script src="js/main.js"></script>
+  <script defer src="js/format.js?v=7"></script>
+  <script defer src="js/charts.js?v=7"></script>
+  <script defer src="js/zoom.js?v=7"></script>
+  <script defer src="js/main.js?v=7"></script>
 </body>
 </html>

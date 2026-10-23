@@ -33,9 +33,7 @@ dl, dd { margin: 0; }
 .topbar {
   position: sticky; top: 0; z-index: 50;
   height: var(--topbar-h);
-  background: rgba(17, 18, 20, 0.82);
-  backdrop-filter: saturate(140%) blur(12px);
-  -webkit-backdrop-filter: saturate(140%) blur(12px);
+  background: rgba(17, 18, 20, 0.96); /* near-opaque instead of backdrop-filter: no re-blur on every scroll frame */
   border-bottom: 1px solid var(--line);
 }
 .topbar__inner {
@@ -97,6 +95,8 @@ dl, dd { margin: 0; }
 .hero__caption { margin-top: 24px; font-size: 13px; color: var(--faint); }
 
 /* 02–06 Story */
+/* The monitor halo reaches past the column. overflow: clip (not hidden) keeps position: sticky working. */
+.hero, .story { overflow-x: clip; }
 .story {
   max-width: 1360px; margin: 0 auto; padding: 0 var(--gutter);
   display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(32px, 5vw, 80px);
@@ -136,6 +136,10 @@ dl, dd { margin: 0; }
 }
 
 /* 07 FAQ */
+/* Below the fold: skip layout and paint until near the viewport. */
+.faq, .footer { content-visibility: auto; }
+.faq { contain-intrinsic-size: auto 900px; }
+.footer { contain-intrinsic-size: auto 240px; }
 .faq { max-width: 1360px; margin: 0 auto; padding: 12vh var(--gutter) 14vh; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(32px, 5vw, 80px); }
 .section-head { align-self: start; position: sticky; top: calc(var(--topbar-h) + 48px); }
 .section-head p:not(.kicker) { margin-top: 16px; max-width: 36ch; font-size: 17px; color: var(--muted); }
