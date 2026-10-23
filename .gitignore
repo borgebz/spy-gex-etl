@@ -20,4 +20,3 @@ workflow/data/*.db-shm
 workflow/data/archive/
 
 .DS_Store
-
