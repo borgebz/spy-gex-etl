@@ -12,7 +12,7 @@
     </config>
     <config key="variables"/>
     <config key="nodeAnnotation">
-        <entry key="text" type="xstring" value="Add WAL mode"/>
+        <entry key="text" type="xstring" value="Set WAL mode"/>
         <entry key="contentType" type="xstring" value="text/plain"/>
         <entry key="bgcolor" type="xint" value="16777215"/>
         <entry key="x-coordinate" type="xint" value="0"/>
