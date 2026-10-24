@@ -1,28 +1,37 @@
 #!/usr/bin/env python3
-"""Retention for spy_gex.db: delete old raw CBOE files, archive old option snapshots.
+"""Retention for spy_gex.db: delete old raw CBOE files, archive old option snapshots to Parquet.
 
 Rules
 - raw_cboe_options_quotes: delete rows older than --raw-days (default 2), only when the
   file is already parsed into option_snapshot. Raw files are not archived.
 - option_snapshot: for each market day older than --option-days (default 7), write every
-  row of that day to <archive-dir>/options/YYYY-MM-DD.jsonl.gz, check the file, then delete
-  the day's rows from the DB except the daily close (the latest file of the day's last
-  market time, the same file 04-compute-gex uses).
+  row of that day to <archive-dir>/options/date=YYYY-MM-DD/part.parquet (zstd), check the
+  file, then delete the day's rows from the DB except the daily close (the latest file of the
+  day's last market time, the same file 04-compute-gex uses).
 - gex_snapshot, gex_strike, price_tick: never touched.
 
+The archive is Hive-partitioned: DuckDB, polars and Spark read `date` from the folder name, e.g.
+  SELECT * FROM read_parquet('archive/options/*/*.parquet', hive_partitioning = true)
+
 Deleting rows does not shrink the file. Use --vacuum (no other connection may be open).
+
+Needs DuckDB: pip install -r scripts/requirements.txt (the first run also downloads
+DuckDB's sqlite extension).
 
 Usage
   archive_db.py [--dry-run] [--vacuum] [--db PATH] [--archive-dir PATH]
                 [--raw-days N] [--option-days N] [--now YYYY-MM-DDTHH:MM:SSZ]
 """
 import argparse
-import gzip
-import json
 import os
 import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
+
+try:
+    import duckdb
+except ImportError:
+    sys.exit("duckdb is missing: pip install -r scripts/requirements.txt")
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_DB = os.path.join(REPO, "workflow", "data", "spy_gex.db")
@@ -38,6 +47,25 @@ JOIN (SELECT date(market_ts_utc) AS day, max(market_ts_utc) AS last_market
       GROUP BY date(market_ts_utc)) d
   ON s.market_ts_utc = d.last_market
 GROUP BY d.day
+"""
+
+# Typed columns; sorted so similar values sit together (better compression, readers can skip blocks).
+EXPORT_SQL = """
+SELECT strptime(snapshot_ts_utc, '%Y-%m-%dT%H:%M:%SZ')::TIMESTAMPTZ AS snapshot_ts_utc,
+       strptime(market_ts_utc,   '%Y-%m-%dT%H:%M:%SZ')::TIMESTAMPTZ AS market_ts_utc,
+       option_symbol,
+       expiry::DATE           AS expiry,
+       type,
+       strike::DOUBLE         AS strike,
+       spot::DOUBLE           AS spot,
+       gamma::DOUBLE          AS gamma,
+       open_interest::INTEGER AS open_interest,
+       iv::DOUBLE             AS iv,
+       delta::DOUBLE          AS delta,
+       volume::INTEGER        AS volume
+FROM src.option_snapshot
+WHERE date(market_ts_utc) = $day
+ORDER BY snapshot_ts_utc, expiry, strike, type
 """
 
 
@@ -87,42 +115,46 @@ def db_size(path):
     return sum(os.path.getsize(p) for p in (path, path + "-wal") if os.path.exists(p))
 
 
-def count_lines(path):
-    with gzip.open(path, "rt", encoding="utf-8") as f:
-        return sum(1 for _ in f)
+def open_duckdb(db_path):
+    duck = duckdb.connect()
+    duck.execute("INSTALL sqlite; LOAD sqlite; SET TimeZone = 'UTC';")
+    duck.execute(f"ATTACH '{db_path}' AS src (TYPE sqlite, READ_ONLY)")
+    return duck
 
 
-def archive_day(con, day, close_snapshot, archive_dir, dry_run):
-    rows = con.execute(
-        "SELECT * FROM option_snapshot WHERE date(market_ts_utc) = ? ORDER BY snapshot_ts_utc, option_symbol",
-        (day,))
-    cols = [c[0] for c in rows.description]
-    rows = rows.fetchall()
-    path = os.path.join(archive_dir, "options", f"{day}.jsonl.gz")
+def parquet_fingerprint(duck, path):
+    """Row count and total open interest: compared with SQLite before any delete."""
+    return tuple(duck.execute(
+        "SELECT count(*), coalesce(sum(open_interest), 0) FROM read_parquet($p)", {"p": path}).fetchone())
+
+
+def archive_day(con, duck, day, close_snapshot, archive_dir, dry_run):
+    expected = con.execute(
+        "SELECT count(*), coalesce(sum(open_interest), 0) FROM option_snapshot WHERE date(market_ts_utc) = ?",
+        (day,)).fetchone()
+    path = os.path.join(archive_dir, "options", f"date={day}", "part.parquet")
     if dry_run:
-        return len(rows), path, "would write"
+        return expected[0], path, "would write"
 
     if os.path.exists(path):
         # A previous run wrote the file but stopped before the delete: reuse it only if complete.
-        if count_lines(path) != len(rows):
-            raise SystemExit(f"{path} exists with a different row count; check it by hand")
+        if parquet_fingerprint(duck, path) != tuple(expected):
+            raise SystemExit(f"{path} exists but does not match the DB; check it by hand")
         status = "file existed"
     else:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         tmp = path + ".tmp"
-        with gzip.open(tmp, "wt", encoding="utf-8", compresslevel=6) as f:
-            for r in rows:
-                f.write(json.dumps(dict(zip(cols, r)), separators=(",", ":")) + "\n")
-        if count_lines(tmp) != len(rows):
+        duck.execute(f"COPY ({EXPORT_SQL}) TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)", {"day": day})
+        if parquet_fingerprint(duck, tmp) != tuple(expected):
             os.remove(tmp)
             raise SystemExit(f"archive check failed for {day}; nothing deleted")
         os.replace(tmp, path)
-        status = "written"
+        status = f"written, {os.path.getsize(path) / 1e6:.2f} MB"
 
     with con:
         con.execute("DELETE FROM option_snapshot WHERE date(market_ts_utc) = ? AND snapshot_ts_utc <> ?",
                     (day, close_snapshot))
-    return len(rows), path, status
+    return expected[0], path, status
 
 
 def main():
@@ -139,9 +171,15 @@ def main():
     n = delete_raw(con, raw_cutoff, args.dry_run)
     print(f"raw files before {raw_cutoff}: {n} {'to delete' if args.dry_run else 'deleted'}")
 
-    for day, close in days_to_archive(con, option_cutoff_day):
-        n, path, status = archive_day(con, day, close, args.archive_dir, args.dry_run)
-        print(f"options {day}: {n} rows → {path} ({status}); kept daily close {close}")
+    pending = days_to_archive(con, option_cutoff_day)
+    if pending:
+        duck = open_duckdb(args.db)
+        try:
+            for day, close in pending:
+                n, path, status = archive_day(con, duck, day, close, args.archive_dir, args.dry_run)
+                print(f"options {day}: {n} rows → {path} ({status}); kept daily close {close}")
+        finally:
+            duck.close()   # release the read connection before VACUUM
 
     if args.vacuum and not args.dry_run:
         before = db_size(args.db)

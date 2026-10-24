@@ -16,11 +16,17 @@ workflow/data/*.db
 workflow/data/*.db-wal
 workflow/data/*.db-shm
 
-# Option snapshot archive (written by scripts/archive_db.py, ~13 MB per day)
+# Option snapshot archive (written by scripts/archive_db.py, Parquet, ~5 MB per day)
 workflow/data/archive/
+
+# Python virtual environment for scripts/
+scripts/.venv/
 
 # .NET build output
 scheduler/bin/
 scheduler/obj/
+
+# Local scheduler notes
+scheduler/RUNBOOK.md
 
 .DS_Store

@@ -10,6 +10,9 @@ public sealed class SchedulerOptions
 
     [Required] public required string WorkflowRoot { get; init; }
 
+    /// <summary>The scheduler's own copy of the workflows (made at startup); the jobs run this copy.</summary>
+    [Required] public required string RunRoot { get; init; }
+
     [Required] public required string RepoRoot { get; init; }
 
     [Required] public required string BatchDataDir { get; init; }
@@ -37,4 +40,7 @@ public sealed class SchedulerOptions
 
     /// <summary>Log what would run, start no process.</summary>
     public bool DryRun { get; init; }
+
+    /// <summary>Prevent system sleep while the scheduler runs (caffeinate -s, on power only).</summary>
+    public bool KeepAwake { get; init; } = true;
 }

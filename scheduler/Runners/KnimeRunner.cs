@@ -21,7 +21,7 @@ public sealed class KnimeRunner(ProcessRunner process, IOptions<SchedulerOptions
             "--launcher.suppressErrors",
             "-r",
             "--no-save",
-            Path.Combine(_opt.WorkflowRoot, workflow)
+            Path.Combine(_opt.RunRoot, workflow)   // the copy, never the folder open in the KNIME GUI
         ];
 
         if (_opt.DryRun)

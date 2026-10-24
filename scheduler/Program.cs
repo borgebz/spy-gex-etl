@@ -2,6 +2,7 @@ using GexScheduler.Jobs;
 using GexScheduler.Options;
 using GexScheduler.Runners;
 using GexScheduler.Scheduling;
+using GexScheduler.Startup;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -31,6 +32,9 @@ builder.Services.AddSingleton<ProcessRunner>();
 builder.Services.AddSingleton<KnimeRunner>();
 builder.Services.AddSingleton<PythonRunner>();
 
+// Hosted services start in this order: copy the workflows before any job runs.
+builder.Services.AddHostedService<WorkflowCopy>();
+builder.Services.AddHostedService<KeepAwake>();
 builder.Services.AddHostedService<PriceJob>();
 builder.Services.AddHostedService<PipelineJob>();
 builder.Services.AddHostedService<ArchiveJob>();

@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
-  <link rel="stylesheet" href="css/tokens.css?v=21">
-  <link rel="stylesheet" href="css/main.css?v=21">
-  <link rel="stylesheet" href="css/terminal.css?v=21">
+  <link rel="stylesheet" href="css/tokens.css?v=33">
+  <link rel="stylesheet" href="css/main.css?v=33">
+  <link rel="stylesheet" href="css/terminal.css?v=33">
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -64,16 +64,16 @@
             <span class="term-time">As of <span class="num" data-bind="asof">–</span></span>
           </div>
           <dl class="stats">
-            <div><dt>Spot</dt><dd class="num amber" data-bind="spot">–</dd></div>
-            <div><dt>Net GEX</dt><dd class="num" data-bind="total_gex" data-sign>–</dd></div>
-            <div><dt data-def="call_wall">Call wall</dt><dd class="num call" data-bind="call_wall">–</dd></div>
-            <div><dt data-def="put_wall">Put wall</dt><dd class="num put" data-bind="put_wall">–</dd></div>
+            <div><dt>Spot</dt><dd class="num amber" data-bind="spot">–</dd><span class="delta" data-delta="spot"></span></div>
+            <div><dt>Net GEX</dt><dd class="num" data-bind="total_gex" data-sign>–</dd><span class="delta" data-delta="total_gex"></span></div>
+            <div><dt data-def="call_wall">Call wall</dt><dd class="num call" data-bind="call_wall">–</dd><span class="delta" data-delta="call_wall"></span></div>
+            <div><dt data-def="put_wall">Put wall</dt><dd class="num put" data-bind="put_wall">–</dd><span class="delta" data-delta="put_wall"></span></div>
           </dl>
           <div class="chart-head">
-            <span>Gamma by strike, $bn per 1% move</span>
-            <span class="legend"><i class="sw sw--call"></i>Calls <i class="sw sw--put"></i>Puts</span>
+            <span data-spark-title>Today: price and net gamma, ET</span>
+            <span class="legend"><i class="sw sw--amber"></i>Price <i class="sw sw--gex" title="Green above zero, red below"></i>Net GEX</span>
           </div>
-          <div class="chart chart--hero" id="chart-hero" role="img" aria-label="Bar chart of dealer gamma by strike around spot"></div>
+          <div class="chart chart--hero" id="chart-hero" role="img" aria-label="Today's SPY price over bars of net gamma"></div>
           <div class="term-status">
             <span class="term-feed"><i class="pulse"></i>CBOE delayed quotes</span>
             <span class="term-keys"><span class="keys-kbd"><kbd>Esc</kbd> exits</span><span class="keys-touch">Tap the red light to exit</span></span>
@@ -161,15 +161,20 @@
                   <span class="legend"><i class="sw sw--call"></i>Calls <i class="sw sw--put"></i>Puts</span>
                 </div>
                 <div class="chart chart--story" id="chart-strike" role="img" aria-label="Bar chart of call and put gamma by strike"></div>
-                <p class="screen-foot">Drag for more strikes · Shift + scroll to zoom · Green light for full screen</p>
               </section>
 
               <section class="screen" data-screen-id="intraday" data-wt="Price and gamma" aria-label="Price and net gamma over the session">
-                <div class="chart-head">
-                  <span>SPY price and net gamma, ET</span>
-                  <span class="legend"><i class="sw sw--amber"></i>Price <i class="sw sw--call"></i>GEX + <i class="sw sw--put"></i>GEX −</span>
+                <div class="chart-head chart-head--tools">
+                  <div class="sessions" data-sessions hidden>
+                    <button type="button" class="sessions__step" data-step="-1" aria-label="Previous session"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M6.2 2.2L3.4 5l2.8 2.8"/></svg></button>
+                    <span class="sessions__day" data-session-label aria-live="polite">–</span>
+                    <button type="button" class="sessions__step" data-step="1" aria-label="Next session"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3.8 2.2L6.6 5 3.8 7.8"/></svg></button>
+                    <button type="button" class="sessions__pill" data-view-10d aria-pressed="false" title="Closing gamma of the last sessions">10D</button>
+                  </div>
+                  <span class="legend"><i class="sw sw--amber"></i>Price <i class="sw sw--gex" title="Green above zero, red below"></i>Net GEX</span>
                 </div>
                 <div class="chart chart--story" id="chart-intraday" role="img" aria-label="Line of SPY price over bars of net gamma"></div>
+                <p class="screen-foot" data-intraday-foot></p>
                 <p class="screen-note" data-intraday-note hidden></p>
               </section>
 
@@ -292,12 +297,13 @@
 
   <noscript><p class="noscript">This page needs JavaScript to draw the charts.</p></noscript>
 
+  <script defer src="data/history.js"></script><!-- sessions before the live week -->
   <script defer src="data/data.js"></script>
   <script defer src="vendor/echarts.min.js"></script><!-- Apache ECharts 5.5.1, Apache-2.0, vendored so the page works offline -->
 
-  <script defer src="js/format.js?v=21"></script>
-  <script defer src="js/charts.js?v=21"></script>
-  <script defer src="js/zoom.js?v=21"></script>
-  <script defer src="js/main.js?v=21"></script>
+  <script defer src="js/format.js?v=33"></script>
+  <script defer src="js/charts.js?v=33"></script>
+  <script defer src="js/zoom.js?v=33"></script>
+  <script defer src="js/main.js?v=33"></script>
 </body>
 </html>

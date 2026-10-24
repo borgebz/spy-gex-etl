@@ -1,12 +1,10 @@
 /* The monitor: a physical object, not a card.
    Layers, outside in: body (bezel) → recessed lip → curved glass → phosphor content → glare + scanlines. */
 .monitor { position: relative; isolation: isolate; width: 100%; display: flex; flex-direction: column; align-items: center; }
-.monitor::before { /* warm light the screen throws on the wall behind it */
+.monitor::before { /* faint neutral light behind the monitor (no amber glow) */
   content: ""; position: absolute; z-index: -1; pointer-events: none;
   inset: -14% 0 -6%; /* vertical only: a sideways overhang would make the page scroll on phones */
-  background:
-    radial-gradient(56% 42% at 50% 44%, rgba(255, 179, 71, 0.13), transparent 72%),
-    radial-gradient(80% 60% at 50% 50%, rgba(255, 255, 255, 0.025), transparent 75%);
+  background: radial-gradient(80% 60% at 50% 50%, rgba(255, 255, 255, 0.025), transparent 75%);
 }
 .monitor--hero { max-width: 880px; margin-top: clamp(28px, 4.5vh, 44px); text-align: left; }
 .monitor--story { max-width: 740px; margin-left: auto; }
@@ -22,8 +20,7 @@
     inset 1px 0 0 rgba(255, 255, 255, 0.025), inset -1px 0 0 rgba(0, 0, 0, 0.3),
     0 0 0 1px #070809,
     0 0 0 2px rgba(255, 255, 255, 0.05),         /* rim highlight against the page */
-    0 50px 90px -40px rgba(0, 0, 0, 0.85),
-    0 0 140px -30px rgba(255, 179, 71, 0.16);    /* screen light spilling on the desk */
+    0 50px 90px -40px rgba(0, 0, 0, 0.85);
 }
 
 .crt__screen {
@@ -184,11 +181,42 @@
 .sw--call { background: var(--call); }
 .sw--put { background: var(--put); }
 .sw--amber { background: var(--amber); height: 2px; width: 12px; border-radius: 0; }
+/* Net GEX: one vertical bar, green above zero and red below, like the bars in the chart */
+.sw--gex { width: 4px; height: 12px; border-radius: 1px; background: linear-gradient(var(--call) 50%, var(--put) 50%); }
 
 .chart { width: 100%; margin-top: 8px; }
 .chart-missing { display: grid; place-items: center; height: 100%; font-size: 13px; color: var(--amber-dim); }
 .chart--hero { height: clamp(200px, 26vh, 250px); }
 .chart--story { height: clamp(260px, 40vh, 380px); }
+
+/* Change vs the previous session, under each hero number */
+.delta { display: block; margin-top: 2px; font-size: 12px; color: var(--amber-dim); white-space: nowrap; }
+.delta .num { font-weight: 600; }
+
+/* Session switch on the price-and-gamma screen: ‹ Fri, Oct 23 · live › [10D] */
+.sessions { display: inline-flex; align-items: center; gap: 4px; }
+.sessions[hidden] { display: none; }
+.sessions__step, .sessions__pill {
+  display: inline-grid; place-items: center; height: 26px; min-width: 26px; padding: 0 8px;
+  border: 1px solid var(--grid); border-radius: 6px; background: transparent;
+  color: var(--amber); font: 600 12px var(--font-num); cursor: pointer;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+.sessions__step { padding: 0; }
+.sessions__step svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.sessions__step:hover:not(:disabled), .sessions__pill:hover { background: rgba(255, 179, 71, 0.08); border-color: var(--amber-dim); }
+.sessions__step:disabled { opacity: 0.3; cursor: default; }
+.sessions__step:focus-visible, .sessions__pill:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.sessions__pill { margin-left: 6px; }
+.sessions__pill[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--screen); }
+.sessions__day { min-width: 15ch; text-align: center; font-size: 13px; color: var(--amber); white-space: nowrap; }
+.sessions__day .tag { margin-left: 6px; font-size: 11px; color: var(--amber-dim); }
+.sessions__day .tag--live { color: var(--call); }
+.sessions__day .tag--live::before {
+  content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 4px; border-radius: 50%;
+  background: var(--call); vertical-align: 1px;
+}
+.screen-foot .num { color: var(--amber); }
 
 /* Screen stack in the fixed device. Switch = a date wheel: the old screen flicks out,
    the new one snaps in from the next slot with a small overshoot. data-dir="back" reverses it. */
@@ -217,6 +245,7 @@
   font-size: 14px; color: var(--amber-dim);
 }
 .formula__today .num { font-size: 15px; }
+.screen-foot:empty { display: none; }
 .screen-foot { margin-top: 10px; font-size: 12px; color: var(--amber-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .screen-note {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
