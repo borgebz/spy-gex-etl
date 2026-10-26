@@ -10,11 +10,6 @@ gamma exposure (GEX), stores the history in SQLite and publishes it as a static 
 What GEX is, the formula, the assumptions and an FAQ are on the page. This README covers how the
 data is built and run.
 
-> Course project for *Integração de Sistemas de Informação* (ISI), LESI, UPCA, 2026/27.
-> Not financial advice.
-
----
-
 ## Architecture
 
 ```mermaid
@@ -28,23 +23,23 @@ flowchart LR
     A -->|old snapshots| PQ[(Parquet archive)]
 ```
 
-| Source | What | Format | Access |
-|---|---|---|---|
+| Source                                                                                     | What                                                         | Format                 | Access                |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ---------------------- | --------------------- |
 | [CBOE delayed quotes](https://cdn-api.cboe.com/api/global/delayed_quotes/options/SPY.json) | Full SPY chain, ~12,700 contracts with gamma, OI, IV, volume | JSON, ~5.7 MB per file | Public, ~15 min delay |
-| [Financial Modeling Prep](https://site.financialmodelingprep.com/) | SPY last price | JSON (REST) | API key |
-| `workflow/config.json` | URLs, DB path, FMP token | JSON | Local, gitignored |
+| [Financial Modeling Prep](https://site.financialmodelingprep.com/)                         | SPY last price                                               | JSON (REST)            | API key               |
+| `workflow/config.json`                                                                     | URLs, DB path, FMP token                                     | JSON                   | Local, gitignored     |
 
 ## Jobs
 
-| Job | Runs | Does | Writes |
-|---|---|---|---|
-| `00-orchestrator` | Every 5 min | Calls 01 → 03 → 04 → 05 | – |
-| `01-extract-cboe-chain` | via 00 | GET the chain; store the body with file time and market time; skip a file already stored | `raw_cboe_options_quotes` |
-| `02-extract-spy-price` | Every 60 s | GET the SPY quote; skip repeats | `price_tick` |
-| `03-transform-options` | via 00 | Parse, split the OCC symbol, clean, dedupe | `option_snapshot` |
-| `04-compute-gex` | via 00 | GEX per contract → strike → snapshot; call and put walls | `gex_strike`, `gex_snapshot` |
-| `05-export` | via 00 | Query the DB; write the page files | `web/data/*` |
-| `archive_db.py` | 18:00 ET | Retention: raw files and old option snapshots out of SQLite | Parquet |
+| Job                     | Runs        | Does                                                                                     | Writes                       |
+| ----------------------- | ----------- | ---------------------------------------------------------------------------------------- | ---------------------------- |
+| `00-orchestrator`       | Every 5 min | Calls 01 → 03 → 04 → 05                                                                  | –                            |
+| `01-extract-cboe-chain` | via 00      | GET the chain; store the body with file time and market time; skip a file already stored | `raw_cboe_options_quotes`    |
+| `02-extract-spy-price`  | Every 60 s  | GET the SPY quote; skip repeats                                                          | `price_tick`                 |
+| `03-transform-options`  | via 00      | Parse, split the OCC symbol, clean, dedupe                                               | `option_snapshot`            |
+| `04-compute-gex`        | via 00      | GEX per contract → strike → snapshot; call and put walls                                 | `gex_strike`, `gex_snapshot` |
+| `05-export`             | via 00      | Query the DB; write the page files                                                       | `web/data/*`                 |
+| `archive_db.py`         | 18:00 ET    | Retention: raw files and old option snapshots out of SQLite                              | Parquet                      |
 
 <details>
 <summary>KNIME workflow diagrams</summary>
@@ -67,15 +62,16 @@ flowchart LR
 
 One SQLite file (`workflow/data/spy_gex.db`, WAL mode). Times are ISO 8601 UTC text.
 
-| Table | Grain | Key | Main columns |
-|---|---|---|---|
-| `raw_cboe_options_quotes` | One CBOE file | `snapshot_ts_utc` (unique) | `market_ts_utc`, `source_url`, `status_code`, `body` (raw JSON) |
-| `option_snapshot` | One contract in one file | `snapshot_ts_utc` + `option_symbol` | `expiry`, `type`, `strike`, `spot`, `gamma`, `open_interest`, `iv`, `delta`, `volume` |
-| `gex_strike` | One strike in one file | `snapshot_ts_utc` + `strike` | `call_gex`, `put_gex`, `net_gex` |
-| `gex_snapshot` | One market time | `snapshot_ts_utc`; unique `market_ts_utc` | `spot`, `call_gex`, `put_gex`, `total_gex`, `call_wall`, `put_wall` |
-| `price_tick` | One SPY quote | `market_ts_utc` | `price`, `volume`, `source` |
+| Table                     | Grain                    | Key                                       | Main columns                                                                          |
+| ------------------------- | ------------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| `raw_cboe_options_quotes` | One CBOE file            | `snapshot_ts_utc` (unique)                | `market_ts_utc`, `source_url`, `status_code`, `body` (raw JSON)                       |
+| `option_snapshot`         | One contract in one file | `snapshot_ts_utc` + `option_symbol`       | `expiry`, `type`, `strike`, `spot`, `gamma`, `open_interest`, `iv`, `delta`, `volume` |
+| `gex_strike`              | One strike in one file   | `snapshot_ts_utc` + `strike`              | `call_gex`, `put_gex`, `net_gex`                                                      |
+| `gex_snapshot`            | One market time          | `snapshot_ts_utc`; unique `market_ts_utc` | `spot`, `call_gex`, `put_gex`, `total_gex`, `call_wall`, `put_wall`                   |
+| `price_tick`              | One SPY quote            | `market_ts_utc`                           | `price`, `volume`, `source`                                                           |
 
 Two times on every snapshot:
+
 - `snapshot_ts_utc`: when CBOE built the file.
 - `market_ts_utc`: the market time of the data (CBOE `last_trade_time`, New York → UTC). Every
   chart and join uses this one. A file is built about 15 minutes after its market time.
@@ -98,13 +94,13 @@ Two times on every snapshot:
 `05-export` writes four files. The page reads the `.js` files, so it also opens from disk with no
 server.
 
-| File | Content | Format |
-|---|---|---|
-| [`web/data/data.js`](web/data/data.js) | Everything the page needs (`window.GEX_DATA`) | JavaScript |
-| [`web/data/gex_snapshot.json`](web/data/gex_snapshot.json) | GEX per market time | JSON |
-| [`web/data/gex_strike_latest.csv`](web/data/gex_strike_latest.csv) | GEX per strike, latest snapshot | CSV |
-| [`web/data/gex_daily.xml`](web/data/gex_daily.xml) | Last snapshot of each trading day | XML |
-| [`web/data/history.js`](web/data/history.js) | GEX per snapshot and prices of the earlier sessions | JavaScript |
+| File                                                               | Content                                             | Format     |
+| ------------------------------------------------------------------ | --------------------------------------------------- | ---------- |
+| [`web/data/data.js`](web/data/data.js)                             | Everything the page needs (`window.GEX_DATA`)       | JavaScript |
+| [`web/data/gex_snapshot.json`](web/data/gex_snapshot.json)         | GEX per market time                                 | JSON       |
+| [`web/data/gex_strike_latest.csv`](web/data/gex_strike_latest.csv) | GEX per strike, latest snapshot                     | CSV        |
+| [`web/data/gex_daily.xml`](web/data/gex_daily.xml)                 | Last snapshot of each trading day                   | XML        |
+| [`web/data/history.js`](web/data/history.js)                       | GEX per snapshot and prices of the earlier sessions | JavaScript |
 
 ## Operations
 
