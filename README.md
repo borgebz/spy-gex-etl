@@ -1,16 +1,57 @@
+<div align="center">
+
+<a href="https://ipca.pt/"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/readme/upca-dark.svg">
+  <img src=".github/readme/upca.svg" alt="Universidade Politécnica do Cávado e do Ave" height="56">
+</picture></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://est.ipca.pt/"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/readme/est-dark.svg">
+  <img src=".github/readme/est.svg" alt="Escola Superior de Tecnologia · UPCA" height="56">
+</picture></a>
+
+<sub>Project for the Escola Superior de Tecnologia, Universidade Politécnica do Cávado e do Ave</sub>
+
 # GreeksAddicted · SPY gamma ETL
 
-A KNIME pipeline that pulls the full SPY option chain from CBOE every 5 minutes, computes dealer
-gamma exposure (GEX), stores the history in SQLite and publishes it as a static page.
+**Dealer gamma exposure (GEX) for SPY, rebuilt every 5 minutes from the full CBOE option chain.**
 
-**Live page: [borgebz.github.io/spy-gex-etl](https://borgebz.github.io/spy-gex-etl/)**
+[![Live page](https://img.shields.io/badge/live-borgebz.github.io%2Fspy--gex--etl-2ea44f?style=for-the-badge&logo=githubpages&logoColor=white)](https://borgebz.github.io/spy-gex-etl/)
+
+[![KNIME](https://img.shields.io/badge/KNIME-5.12-FDD800?logo=knime&logoColor=black)](https://www.knime.com/)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](scheduler/)
+[![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)](scripts/)
+[![SQLite](https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white)](#data-model)
+[![Parquet](https://img.shields.io/badge/Parquet-zstd-50ABF1?logo=apacheparquet&logoColor=white)](#operations)
+[![ECharts](https://img.shields.io/badge/ECharts-AA344D?logo=apacheecharts&logoColor=white)](web/vendor/)
+<br>
+[![Pages](https://github.com/borgebz/spy-gex-etl/actions/workflows/pages.yml/badge.svg)](https://github.com/borgebz/spy-gex-etl/actions/workflows/pages.yml)
+[![Last commit](https://img.shields.io/github/last-commit/borgebz/spy-gex-etl)](https://github.com/borgebz/spy-gex-etl/commits/main)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 
 [![GreeksAddicted page](.github/readme/hero.png)](https://borgebz.github.io/spy-gex-etl/)
 
-What GEX is, the formula, the assumptions and an FAQ are on the page. This README covers how the
-data is built and run.
+[Architecture](#architecture) · [Jobs](#jobs) · [Data model](#data-model) · [Transformations](#transformations) · [Outputs](#outputs) · [Operations](#operations) · [Run it](#run-it)
 
-## Architecture
+</div>
+
+## At a glance
+
+|                                |                                                          |
+| ------------------------------ | -------------------------------------------------------- |
+| :inbox_tray: **Extract**       | ~12,700 SPY contracts from CBOE every 5 min, price every 60 s |
+| :gear: **Transform**           | Parse, split OCC symbols, clean, dedupe in KNIME         |
+| :abacus: **Compute**           | GEX per contract → strike → snapshot, call and put walls |
+| :card_file_box: **Load**       | SQLite (hot), Parquet (archive), static files for the web |
+| :calendar: **Schedule**        | .NET 10 worker, NYSE trading days only, 09:00–16:30 ET   |
+| :globe_with_meridians: **Serve** | GitHub Pages, no server, no API key in the page        |
+
+What GEX is, the formula, the assumptions and an FAQ are on the [live page](https://borgebz.github.io/spy-gex-etl/).
+This README covers how the data is built and run.
+
+<a id="architecture"></a>
+
+## :building_construction: Architecture
 
 ```mermaid
 flowchart LR
@@ -29,7 +70,9 @@ flowchart LR
 | [Financial Modeling Prep](https://site.financialmodelingprep.com/)                         | SPY last price                                               | JSON (REST)            | API key               |
 | `workflow/config.json`                                                                     | URLs, DB path, FMP token                                     | JSON                   | Local, gitignored     |
 
-## Jobs
+<a id="jobs"></a>
+
+## :clipboard: Jobs
 
 | Job                     | Runs        | Does                                                                                     | Writes                       |
 | ----------------------- | ----------- | ---------------------------------------------------------------------------------------- | ---------------------------- |
@@ -58,7 +101,9 @@ flowchart LR
 
 </details>
 
-## Data model
+<a id="data-model"></a>
+
+## :card_file_box: Data model
 
 One SQLite file (`workflow/data/spy_gex.db`, WAL mode). Times are ISO 8601 UTC text.
 
@@ -76,7 +121,9 @@ Two times on every snapshot:
 - `market_ts_utc`: the market time of the data (CBOE `last_trade_time`, New York → UTC). Every
   chart and join uses this one. A file is built about 15 minutes after its market time.
 
-## Transformations
+<a id="transformations"></a>
+
+## :arrows_counterclockwise: Transformations
 
 - **Parse:** JSON Path + Ungroup turn one file into one row per contract.
 - **Regex:** `SPY(\d{6})([CP])(\d{8})` splits `SPY261023C00765000` into expiry `2026-10-23`,
@@ -89,7 +136,9 @@ Two times on every snapshot:
 - **Join:** two Joiners attach the call wall and the put wall to each snapshot.
 - **Empty runs:** an Empty Table Switch ends 04 cleanly when there is no new file.
 
-## Outputs
+<a id="outputs"></a>
+
+## :outbox_tray: Outputs
 
 `05-export` writes four files. The page reads the `.js` files, so it also opens from disk with no
 server.
@@ -102,7 +151,9 @@ server.
 | [`web/data/gex_daily.xml`](web/data/gex_daily.xml)                 | Last snapshot of each trading day                   | XML        |
 | [`web/data/history.js`](web/data/history.js)                       | GEX per snapshot and prices of the earlier sessions | JavaScript |
 
-## Operations
+<a id="operations"></a>
+
+## :wrench: Operations
 
 - **Scheduler** (`scheduler/`, .NET 10 worker, macOS LaunchAgent). It runs jobs only on NYSE
   trading days (holiday list in `appsettings.json`), 09:00–16:30 ET. A gate keeps the archive job
@@ -114,7 +165,9 @@ server.
 - **Deploy** (`.github/workflows/pages.yml`). Every push that changes `web/` publishes it to GitHub
   Pages. The public page shows the data of the last push.
 
-## Design decisions
+<a id="design-decisions"></a>
+
+## :bulb: Design decisions
 
 - **KNIME + NodePit Batch.** Visual workflows document themselves for the course. KNIME's own batch
   executor is no longer free, so headless runs use [NodePit Batch](https://nodepit.com).
@@ -126,7 +179,9 @@ server.
 - **`data.js` next to the JSON.** Browsers block `fetch` from `file://`. A `<script>` tag works.
 - **No API key in the page.** The public page shows stored prices only.
 
-## Run it
+<a id="run-it"></a>
+
+## :rocket: Run it
 
 You need KNIME Analytics Platform 5.12 with the NodePit Batch extension, and an FMP API key.
 
@@ -150,7 +205,9 @@ knime -nosplash -consoleLog -application com.nodepit.batch.application.NodePitBa
   --launcher.suppressErrors -r --no-save workflow/00-orchestrator
 ```
 
-## Repository
+<a id="repository"></a>
+
+## :file_folder: Repository
 
 ```
 workflow/      KNIME workspace: 00–05, config.example.json
@@ -160,14 +217,18 @@ web/           the page: index.html, css/, js/, vendor/ECharts, data/ (written b
 .github/       Pages deploy workflow, README image
 ```
 
-## Limits and next
+<a id="limits-and-next"></a>
+
+## :compass: Limits and next
 
 - CBOE gives a snapshot only, with no back-fill: history exists only for the days the pipeline ran.
 - The scheduler is macOS-only (LaunchAgent, `caffeinate`), and SQLite allows one writer at a time.
 - Next: weeks of snapshots, then GEX against next-day absolute return and realized volatility; a
   gamma-flip level; SPX next to SPY; the pipeline in .NET on a server with retries and alerts.
 
-## Licence
+<a id="licence"></a>
 
-[MIT](LICENSE). Apache ECharts in `web/vendor/` keeps its own Apache-2.0 licence. Market data
-belongs to CBOE and Financial Modeling Prep, under their terms.
+## :scroll: Licence
+
+[MIT](LICENSE). Apache ECharts in `web/vendor/` keeps its own Apache-2.0 licence. The UPCA and EST logos
+are trademarks of the Universidade Politécnica do Cávado e do Ave. Market data belongs to CBOE and Financial Modeling Prep, under their terms.
